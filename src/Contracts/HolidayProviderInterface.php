@@ -17,4 +17,3 @@ interface HolidayProviderInterface
 
     public function holidaysForYear(int $year, string $locale): HolidayCollection;
 }
-

@@ -11,14 +11,12 @@ use IteratorAggregate;
 /**
  * @implements IteratorAggregate<int, Holiday>
  */
-final class HolidayCollection implements IteratorAggregate, Countable
+final class HolidayCollection implements Countable, IteratorAggregate
 {
     /**
      * @param  array<int, Holiday>  $holidays
      */
-    public function __construct(private array $holidays = [])
-    {
-    }
+    public function __construct(private array $holidays = []) {}
 
     /**
      * @param  array<int, Holiday>  $holidays
@@ -54,4 +52,3 @@ final class HolidayCollection implements IteratorAggregate, Countable
         return $this->holidays;
     }
 }
-

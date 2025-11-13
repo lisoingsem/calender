@@ -15,4 +15,3 @@ interface CalendarInterface
 
     public function fromDateTime(CarbonInterface $dateTime): CalendarDate;
 }
-

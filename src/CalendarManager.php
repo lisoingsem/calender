@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Lisoing\Calendar;
 
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Exceptions\CalendarNotFoundException;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
-use Carbon\CarbonInterface;
 
 final class CalendarManager
 {
     /**
-     * @var Collection<int, CalendarInterface>
+     * @var Collection<string, CalendarInterface>
      */
     private Collection $calendars;
 
@@ -21,7 +21,10 @@ final class CalendarManager
         private readonly string $defaultCalendar,
         private readonly string $fallbackLocale
     ) {
-        $this->calendars = collect();
+        /** @var Collection<string, CalendarInterface> $calendars */
+        $calendars = collect();
+
+        $this->calendars = $calendars;
     }
 
     public function getDefaultCalendar(): string
@@ -44,7 +47,13 @@ final class CalendarManager
         $calendar = $this->calendars->get($identifier);
 
         if ($calendar === null) {
-            throw CalendarNotFoundException::make($identifier, $this->calendars->keys()->all());
+            $available = $this->calendars
+                ->keys()
+                ->map(static fn (mixed $key): string => (string) $key)
+                ->values()
+                ->all();
+
+            throw CalendarNotFoundException::make($identifier, $available);
         }
 
         return $calendar;
@@ -75,4 +84,3 @@ final class CalendarManager
         return $calendar->fromDateTime($dateTime);
     }
 }
-

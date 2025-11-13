@@ -44,4 +44,3 @@ return [
         'KH' => \Lisoing\Calendar\Holidays\Countries\KH\KhmerNationalHolidays::class,
     ],
 ];
-

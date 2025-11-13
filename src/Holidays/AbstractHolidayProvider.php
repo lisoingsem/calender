@@ -23,7 +23,7 @@ abstract class AbstractHolidayProvider implements HolidayProviderInterface
 
     public function holidaysForYear(int $year, string $locale): HolidayCollection
     {
-        $collection = new HolidayCollection();
+        $collection = new HolidayCollection;
 
         foreach ($this->definitions($year) as $definition) {
             $collection->add($this->makeHoliday($definition, $locale));
@@ -59,4 +59,3 @@ abstract class AbstractHolidayProvider implements HolidayProviderInterface
         );
     }
 }
-

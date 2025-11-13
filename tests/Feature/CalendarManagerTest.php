@@ -41,4 +41,3 @@ final class CalendarManagerTest extends TestCase
         $this->assertSame(1, $calendarDate->getDay());
     }
 }
-

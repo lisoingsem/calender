@@ -18,7 +18,7 @@ final class CalendarServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/calendar.php', 'calendar');
+        $this->mergeConfigFrom(__DIR__.'/../config/calendar.php', 'calendar');
 
         $this->app->singleton(CalendarManager::class, static function (Container $container): CalendarManager {
             $config = $container->make('config')->get('calendar');
@@ -28,8 +28,8 @@ final class CalendarServiceProvider extends ServiceProvider
                 fallbackLocale: $config['fallback_locale']
             );
 
-            $manager->register(new GregorianCalendar());
-            $manager->register(new KhmerLunarCalendar());
+            $manager->register(new GregorianCalendar);
+            $manager->register(new KhmerLunarCalendar);
 
             return $manager;
         });
@@ -41,7 +41,7 @@ final class CalendarServiceProvider extends ServiceProvider
 
             $manager = new HolidayManager($config['fallback_locale']);
 
-            $manager->register(new KhmerNationalHolidays());
+            $manager->register(new KhmerNationalHolidays);
 
             return $manager;
         });
@@ -53,10 +53,9 @@ final class CalendarServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/calendar.php' => config_path('calendar.php'),
+            __DIR__.'/../config/calendar.php' => config_path('calendar.php'),
         ], 'calendar-config');
 
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'calendar');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'calendar');
     }
 }
-

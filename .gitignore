@@ -1,0 +1,12 @@
+vendor/
+.DS_Store
+.idea/
+.vscode/
+.env
+composer.lock
+phpstan.neon
+phpunit.xml
+pint.json
+.phpunit.result.cache
+.phpunit.cache
+build/

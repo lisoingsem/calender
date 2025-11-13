@@ -13,7 +13,7 @@ final class HolidayCollectionTest extends TestCase
 {
     public function test_it_counts_and_iterates_holidays(): void
     {
-        $collection = new HolidayCollection();
+        $collection = new HolidayCollection;
 
         $collection->add(new Holiday(
             identifier: 'sample',
@@ -27,4 +27,3 @@ final class HolidayCollectionTest extends TestCase
         $this->assertSame(1, iterator_count($collection->getIterator()));
     }
 }
-

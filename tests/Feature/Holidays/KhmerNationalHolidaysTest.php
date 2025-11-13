@@ -11,7 +11,7 @@ final class KhmerNationalHolidaysTest extends TestCase
 {
     public function test_it_returns_translated_holiday_names(): void
     {
-        $provider = new KhmerNationalHolidays();
+        $provider = new KhmerNationalHolidays;
 
         $holidays = $provider->holidaysForYear(2025, 'km');
 
@@ -23,4 +23,3 @@ final class KhmerNationalHolidaysTest extends TestCase
         $this->assertContains('បុណ្យវិសាខបូជា', $names);
     }
 }
-

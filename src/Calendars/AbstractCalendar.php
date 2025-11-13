@@ -27,4 +27,3 @@ abstract class AbstractCalendar implements CalendarInterface
         return CalendarDate::fromDateTime($dateTime, $this->identifier());
     }
 }
-

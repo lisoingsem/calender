@@ -20,4 +20,3 @@ final class Calendar extends Facade
         return CalendarManager::class;
     }
 }
-

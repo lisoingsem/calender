@@ -11,4 +11,3 @@ final class GregorianCalendar extends AbstractCalendar
         return 'gregorian';
     }
 }
-

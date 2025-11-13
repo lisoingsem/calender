@@ -36,4 +36,3 @@ final class KhmerNationalHolidays extends AbstractHolidayProvider
         ];
     }
 }
-

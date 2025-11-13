@@ -18,8 +18,7 @@ final class Holiday
         private readonly string $country,
         private readonly string $locale,
         private readonly array $metadata = []
-    ) {
-    }
+    ) {}
 
     public function identifier(): string
     {
@@ -54,4 +53,3 @@ final class Holiday
         return $this->metadata;
     }
 }
-

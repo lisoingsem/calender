@@ -43,7 +43,7 @@ final class HolidayManager
         $provider = $this->provider($countryCode);
 
         if ($provider === null) {
-            return new HolidayCollection();
+            return new HolidayCollection;
         }
 
         $locale ??= $this->resolveLocale();
@@ -90,4 +90,3 @@ final class HolidayManager
         );
     }
 }
-
