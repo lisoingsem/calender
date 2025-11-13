@@ -1,0 +1,68 @@
+{
+  "name": "lisoing/calendar",
+  "description": "Universal lunar and solar calendar library with worldwide holidays for Laravel and PHP.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "calendar",
+    "lunar",
+    "solar",
+    "holidays",
+    "laravel",
+    "internationalization"
+  ],
+  "homepage": "https://github.com/lisoing/calendar",
+  "authors": [
+    {
+      "name": "Lisoing",
+      "email": "hello@lisoing.dev",
+      "homepage": "https://lisoing.dev",
+      "role": "Maintainer"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "illuminate/support": "^11.0",
+    "illuminate/translation": "^11.0",
+    "nesbot/carbon": "^3.0"
+  },
+  "require-dev": {
+    "mockery/mockery": "^1.6",
+    "nunomaduro/collision": "^8.0",
+    "orchestra/testbench": "^9.0",
+    "phpstan/phpstan": "^1.11",
+    "phpunit/phpunit": "^11.0",
+    "laravel/pint": "^1.13"
+  },
+  "autoload": {
+    "psr-4": {
+      "Lisoing\\Calendar\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Lisoing\\Calendar\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "lint": "vendor/bin/pint",
+    "test": "vendor/bin/phpunit",
+    "analyse": "vendor/bin/phpstan analyse",
+    "ci": [
+      "@lint",
+      "@test"
+    ]
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Lisoing\\Calendar\\CalendarServiceProvider"
+      ],
+      "aliases": {
+        "Calendar": "Lisoing\\Calendar\\Facades\\Calendar"
+      }
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
