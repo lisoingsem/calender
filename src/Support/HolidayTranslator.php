@@ -114,6 +114,6 @@ final class HolidayTranslator
 
     private static function languageDirectory(): string
     {
-        return dirname(__DIR__, 2).'/lang';
+        return dirname(__DIR__, 2).'/resources/lang';
     }
 }

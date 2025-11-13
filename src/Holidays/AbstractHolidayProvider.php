@@ -21,6 +21,18 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
      */
     protected array $settings = [];
 
+    public static function make(): static
+    {
+        if (function_exists('app')) {
+            /** @var static $resolved */
+            $resolved = app(static::class);
+
+            return $resolved;
+        }
+
+        return new static();
+    }
+
     abstract public function countryCode(): string;
 
     abstract public function name(): string;

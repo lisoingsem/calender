@@ -11,9 +11,7 @@ abstract class TestCase extends OrchestraTestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [
-            CalendarServiceProvider::class,
-        ];
+        return [CalendarServiceProvider::class];
     }
 
     protected function getEnvironmentSetUp($app): void
@@ -22,3 +20,4 @@ abstract class TestCase extends OrchestraTestCase
         $app['config']->set('cache.default', 'array');
     }
 }
+

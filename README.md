@@ -4,7 +4,7 @@ Universal lunar and solar calendar package for Laravel and PHP, maintained by a 
 
 ## Highlights
 
-- 🔭 Dual calendar support with an extensible manager (Gregorian + Khmer lunar included)
+- 🔭 Dual calendar support with an extensible manager (Gregorian + Cambodia lunar included)
 - 🏮 Holiday providers organised per country with translation-ready labels
 - 🌍 Localization files ready for contributors (`resources/lang/{locale}/holidays.php`)
 - ⚙️ Laravel-first experience with auto-discovery, service provider, and facade
@@ -25,18 +25,20 @@ php artisan vendor:publish --tag=calendar-config
 ## Quick Start
 
 ```php
+use Carbon\CarbonImmutable;
+use Lisoing\Calendar\Calendars\CambodiaCalendar;
 use Lisoing\Calendar\Facades\Calendar;
-use Lisoing\Calendar\Facades\Toolkit;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
-$khmerNewYear = new CalendarDate(2025, 13, 1, 'khmer_chhankitek');
+$khmerNewYear = new CalendarDate(2025, 13, 1, 'khmer');
 
-$gregorian = Calendar::convert($khmerNewYear, 'gregorian');
-echo $gregorian->getYear();  // 2025
-echo $gregorian->getMonth(); // 4
-echo $gregorian->getDay();   // 14
+$gregorianDate = Calendar::convert($khmerNewYear, 'gregorian');
+echo $gregorianDate->getYear();  // 2025
+echo $gregorianDate->getMonth(); // 4
+echo $gregorianDate->getDay();   // 14
 
-$carbon = Toolkit::toDateTime($khmerNewYear); // CarbonImmutable 2025-04-14
+$calendar = app(CambodiaCalendar::class);
+$calendarDate = $calendar->fromDateTime(CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh'));
 
 $holiday = Toolkit::holiday('khmer_new_year', 2025, 'KH', 'en');
 echo $holiday?->name(); // Khmer New Year
@@ -52,6 +54,8 @@ foreach (Toolkit::holidays(2025, 'KH', 'km') as $holiday) {
     echo "{$holiday->name()} ({$holiday->date()->toDateString()})";
 }
 ```
+
+Holiday translations are resolved from `lang/cambodia/{locale}/holidays.php`, mirroring the structure used by Spatie's holidays project and enabling contributors to drop in additional locales with a single file.
 
 ## Package Structure
 

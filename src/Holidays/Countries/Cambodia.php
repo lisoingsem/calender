@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Lisoing\Calendar\Holidays\Countries;
 
-use Illuminate\Support\Facades\App;
-use Lisoing\Calendar\CalendarManager;
 use Lisoing\Calendar\Holidays\AbstractHolidayProvider;
-use Lisoing\Calendar\ValueObjects\CalendarDate;
+use Lisoing\Calendar\Support\Khmer\LunisolarCalculator;
 
 final class Cambodia extends AbstractHolidayProvider
 {
-    private const KHMER_CALENDAR = 'khmer_chhankitek';
+    private readonly LunisolarCalculator $calculator;
+
+    public function __construct(?LunisolarCalculator $calculator = null)
+    {
+        $this->calculator = $calculator ?? new LunisolarCalculator();
+    }
 
     public function countryCode(): string
     {
@@ -28,92 +31,99 @@ final class Cambodia extends AbstractHolidayProvider
      */
     protected function definitions(int $year): array
     {
-        $holidays = [
-            $this->solar(
-                slug: 'international_new_year',
-                year: $year,
-                default: sprintf('%d-01-01', $year)
-            ),
-            $this->solar(
-                slug: 'victory_over_genocide_regime',
-                year: $year,
-                default: sprintf('%d-01-07', $year)
-            ),
-            $this->solar(
-                slug: 'international_womens_day',
-                year: $year,
-                default: sprintf('%d-03-08', $year)
-            ),
-            $this->solar(
-                slug: 'king_fathers_memorial',
-                year: $year,
-                default: sprintf('%d-10-15', $year)
-            ),
-        ];
+        $config = $this->config();
+        $definitions = [];
 
-        $khmerNewYearDate = $this->calendar()->toDateTime(new CalendarDate(
-            year: $year,
-            month: 13,
-            day: 1,
-            calendar: self::KHMER_CALENDAR
-        ));
+        foreach ($config['solar'] as $entry) {
+            $definitions[] = $this->solarDefinition($entry, $year);
+        }
 
-        $holidays[] = $this->lunar(
-            slug: 'khmer_new_year',
-            year: $year,
-            defaultDate: $khmerNewYearDate->toDateString()
-        );
+        foreach ($config['lunisolar'] as $entry) {
+            $definitions[] = $this->lunisolarDefinition($entry, $year);
+        }
 
-        $visakDate = $this->calendar()->toDateTime(new CalendarDate(
-            year: $year,
-            month: 8,
-            day: 15,
-            calendar: self::KHMER_CALENDAR
-        ));
-
-        $holidays[] = $this->lunar(
-            slug: 'visak_bochea',
-            year: $year,
-            defaultDate: $visakDate->toDateString()
-        );
-
-        return $holidays;
-    }
-
-    private function solar(string $slug, int $year, string $default, string $type = 'public'): array
-    {
-        $date = $this->resolveDateOverride($slug, $year, $default);
-
-        return [
-            'id' => sprintf('%s_%d', $slug, $year),
-            'slug' => $slug,
-            'date' => $date,
-            'type' => $type,
-        ];
-    }
-
-    private function lunar(string $slug, int $year, string $defaultDate, string $type = 'public'): array
-    {
-        $date = $this->resolveDateOverride($slug, $year, $defaultDate);
-
-        return [
-            'id' => sprintf('%s_%d', $slug, $year),
-            'slug' => $slug,
-            'date' => $date,
-            'type' => $type,
-        ];
-    }
-
-    private function calendar(): CalendarManager
-    {
-        /** @var CalendarManager $manager */
-        $manager = App::make(CalendarManager::class);
-
-        return $manager;
+        return $definitions;
     }
 
     protected function countryDirectory(): string
     {
         return 'cambodia';
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function solarDefinition(array $entry, int $year): array
+    {
+        $month = (int) ($entry['month'] ?? 1);
+        $day = (int) ($entry['day'] ?? 1);
+
+        $default = sprintf('%04d-%02d-%02d', $year, $month, $day);
+
+        $date = $this->resolveDateOverride($entry['slug'], $year, $default);
+
+        return [
+            'id' => sprintf('%s_%d', $entry['slug'], $year),
+            'slug' => $entry['slug'],
+            'date' => $date,
+            'type' => (string) ($entry['type'] ?? 'public'),
+            'name_key' => $entry['name_key'] ?? $entry['slug'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function lunisolarDefinition(array $entry, int $year): array
+    {
+        $date = match ($entry['resolver'] ?? null) {
+            'khmer_new_year' => $this->calculator->getKhmerNewYearDate($year)->toDateString(),
+            'lunar_phase' => $this->calculator->toSolar(
+                gregorianYear: $year,
+                monthSlug: (string) $entry['month_slug'],
+                phaseDay: (int) $entry['day'],
+                phase: (string) ($entry['phase'] ?? 'waxing')
+            )->toDateString(),
+            default => throw new \RuntimeException(sprintf(
+                'Unknown lunisolar resolver [%s] for holiday [%s].',
+                $entry['resolver'] ?? 'null',
+                $entry['slug'] ?? 'unknown'
+            )),
+        };
+
+        $override = $this->resolveDateOverride($entry['slug'], $year, $date);
+
+        return [
+            'id' => sprintf('%s_%d', $entry['slug'], $year),
+            'slug' => $entry['slug'],
+            'date' => $override,
+            'type' => (string) ($entry['type'] ?? 'public'),
+            'name_key' => $entry['name_key'] ?? $entry['slug'],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     solar: array<int, array<string, mixed>>,
+     *     lunisolar: array<int, array<string, mixed>>
+     * }
+     */
+    private function config(): array
+    {
+        static $config;
+
+        if ($config === null) {
+            $path = dirname(__DIR__, 3).'/resources/holidays/cambodia.php';
+
+            /** @var array<string, mixed> $loaded */
+            $loaded = file_exists($path) ? require $path : [];
+
+            $config = [
+                'solar' => is_array($loaded['solar'] ?? null) ? $loaded['solar'] : [],
+                'lunisolar' => is_array($loaded['lunisolar'] ?? null) ? $loaded['lunisolar'] : [],
+            ];
+        }
+
+        return $config;
     }
 }

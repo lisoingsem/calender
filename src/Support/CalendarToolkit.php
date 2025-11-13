@@ -30,7 +30,7 @@ final class CalendarToolkit
         return $this->calendarManager->convert($calendarDate, $targetCalendar);
     }
 
-    public function toLunar(CarbonInterface $dateTime, string $calendarIdentifier = 'khmer_chhankitek'): CalendarDate
+    public function toLunar(CarbonInterface $dateTime, string $calendarIdentifier = 'khmer'): CalendarDate
     {
         return $this->calendarManager->fromDateTime($dateTime, $calendarIdentifier);
     }

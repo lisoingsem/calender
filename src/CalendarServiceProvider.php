@@ -8,11 +8,16 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
+use Lisoing\Calendar\Calendars\CambodiaCalendar;
+use Lisoing\Calendar\Calendars\GregorianCalendar;
+use Lisoing\Calendar\Calendars\NepalCalendar;
 use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Contracts\ConfigurableCalendarInterface;
 use Lisoing\Calendar\Contracts\ConfigurableHolidayProviderInterface;
 use Lisoing\Calendar\Contracts\HolidayProviderInterface;
 use Lisoing\Calendar\Formatting\FormatterManager;
+use Lisoing\Calendar\Formatting\LunarFormatter;
+use Lisoing\Calendar\Holidays\Countries\Cambodia;
 use Lisoing\Calendar\Holidays\HolidayManager;
 use Lisoing\Calendar\Support\CalendarToolkit;
 
@@ -23,18 +28,25 @@ final class CalendarServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/calendar.php', 'calendar');
+        $this->app->singleton(CalendarManager::class, function (Container $container): CalendarManager {
+            /** @var \Illuminate\Contracts\Config\Repository $configRepository */
+            $configRepository = $container->make('config');
+            $config = $configRepository->get('calendar', []);
 
-        $this->app->singleton(CalendarManager::class, static function (Container $container): CalendarManager {
-            $config = $container->make('config')->get('calendar');
+            $defaultCalendar = Arr::get($config, 'default_calendar', 'gregorian');
+
+            $fallbackLocale = Arr::get($config, 'fallback_locale');
+            if (! is_string($fallbackLocale) || $fallbackLocale === '') {
+                $fallbackLocale = (string) $configRepository->get('app.fallback_locale', $configRepository->get('app.locale', 'en'));
+            }
 
             $manager = new CalendarManager(
-                defaultCalendar: $config['default_calendar'],
-                fallbackLocale: $config['fallback_locale']
+                defaultCalendar: (string) $defaultCalendar,
+                fallbackLocale: $fallbackLocale
             );
 
-            $calendars = Arr::get($config, 'calendars', []);
-            $settings = Arr::get($config, 'calendar_settings', []);
+            $calendars = array_merge($this->defaultCalendars(), Arr::get($config, 'calendars', []));
+            $settings = array_replace_recursive($this->defaultCalendarSettings(), Arr::get($config, 'calendar_settings', []));
 
             foreach ($calendars as $identifier => $calendarClass) {
                 $calendar = self::resolveCalendar($container, $calendarClass);
@@ -60,21 +72,25 @@ final class CalendarServiceProvider extends ServiceProvider
 
         $this->app->bind('calendar', static fn (Container $container): CalendarManager => $container->make(CalendarManager::class));
 
-        $this->app->singleton(FormatterManager::class, static function (Container $container): FormatterManager {
-            $config = $container->make('config')->get('calendar');
+        $this->app->singleton(FormatterManager::class, function (Container $container): FormatterManager {
+            $config = $container->make('config')->get('calendar', []);
+            $formatters = array_merge($this->defaultFormatters(), Arr::get($config, 'formatters', []));
 
             return new FormatterManager(
                 container: $container,
                 config: [
-                    'formatters' => Arr::get($config, 'formatters', []),
+                    'formatters' => $formatters,
                 ]
             );
         });
 
         $this->app->bind('calendar.formatter', static fn (Container $container): FormatterManager => $container->make(FormatterManager::class));
 
-        $calendarConfig = $this->app->make('config')->get('calendar');
-        $holidaysEnabled = (bool) Arr::get($calendarConfig, 'features.holidays.enabled', true);
+        /** @var \Illuminate\Contracts\Config\Repository $configRepository */
+        $configRepository = $this->app->make('config');
+        $calendarConfig = $configRepository->get('calendar', []);
+        $features = array_replace_recursive($this->defaultFeatures(), Arr::get($calendarConfig, 'features', []));
+        $holidaysEnabled = (bool) Arr::get($features, 'holidays.enabled', true);
 
         if ($holidaysEnabled) {
             $this->registerHolidayManager();
@@ -83,32 +99,34 @@ final class CalendarServiceProvider extends ServiceProvider
         $this->registerToolkit();
     }
 
-    /**
-     * Bootstrap package services.
-     */
-    public function boot(): void
-    {
-        $this->publishes([
-            __DIR__.'/../config/calendar.php' => config_path('calendar.php'),
-        ], 'calendar-config');
-
-        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'calendar');
-    }
+    public function boot(): void {}
 
     private function registerHolidayManager(): void
     {
-        $this->app->singleton(HolidayManager::class, static function (Container $container): HolidayManager {
-            $config = $container->make('config')->get('calendar');
+        $this->app->singleton(HolidayManager::class, function (Container $container): HolidayManager {
+            /** @var \Illuminate\Contracts\Config\Repository $configRepository */
+            $configRepository = $container->make('config');
+            $config = $configRepository->get('calendar', []);
+
+            $fallbackLocale = Arr::get($config, 'fallback_locale');
+            if (! is_string($fallbackLocale) || $fallbackLocale === '') {
+                $fallbackLocale = (string) $configRepository->get('app.fallback_locale', $configRepository->get('app.locale', 'en'));
+            }
+
+            $supportedLocales = Arr::get($config, 'supported_locales');
+            if (! is_array($supportedLocales) || $supportedLocales === []) {
+                $supportedLocales = (array) $configRepository->get('app.supported_locales', []);
+            }
 
             $manager = new HolidayManager(
-                fallbackLocale: $config['fallback_locale'],
+                fallbackLocale: $fallbackLocale,
                 config: [
-                    'supported_locales' => Arr::get($config, 'supported_locales', []),
+                    'supported_locales' => $supportedLocales,
                 ]
             );
 
-            $providers = Arr::get($config, 'countries', []);
-            $settings = Arr::get($config, 'holiday_settings', []);
+            $providers = array_merge($this->defaultCountries(), Arr::get($config, 'countries', []));
+            $settings = array_replace_recursive($this->defaultHolidaySettings(), Arr::get($config, 'holiday_settings', []));
 
             foreach ($providers as $countryCode => $providerClass) {
                 $provider = self::resolveHolidayProvider($container, $providerClass);
@@ -136,8 +154,10 @@ final class CalendarServiceProvider extends ServiceProvider
     private function registerToolkit(): void
     {
         $this->app->singleton(CalendarToolkit::class, function (Container $container): CalendarToolkit {
-            $config = $container->make('config')->get('calendar');
-            $features = Arr::get($config, 'features', []);
+            /** @var \Illuminate\Contracts\Config\Repository $configRepository */
+            $configRepository = $container->make('config');
+            $config = $configRepository->get('calendar', []);
+            $features = array_replace_recursive($this->defaultFeatures(), Arr::get($config, 'features', []));
             $holidaysEnabled = (bool) Arr::get($features, 'holidays.enabled', true);
 
             $holidayManager = null;
@@ -197,5 +217,85 @@ final class CalendarServiceProvider extends ServiceProvider
         }
 
         return $resolved;
+    }
+
+    /**
+     * @return array<string, class-string<CalendarInterface>>
+     */
+    private function defaultCalendars(): array
+    {
+        return [
+            'gregorian' => GregorianCalendar::class,
+            'cambodia_lunisolar' => CambodiaCalendar::class,
+            'nepal_gregorian' => NepalCalendar::class,
+        ];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function defaultCalendarSettings(): array
+    {
+        return [
+            'gregorian' => [
+                'timezone' => 'UTC',
+            ],
+            'cambodia_lunisolar' => [
+                'timezone' => 'Asia/Phnom_Penh',
+            ],
+            'nepal_gregorian' => [
+                'timezone' => 'Asia/Kathmandu',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, class-string<HolidayProviderInterface>>
+     */
+    private function defaultCountries(): array
+    {
+        return [
+            'KH' => Cambodia::class,
+        ];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function defaultHolidaySettings(): array
+    {
+        return [
+            'KH' => [
+                'observances' => [
+                    'khmer_new_year' => [
+                        'metadata' => [
+                            'notes' => 'Observed over three days according to lunisolar cycle.',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, class-string>
+     */
+    private function defaultFormatters(): array
+    {
+        return [
+            'cambodia_lunisolar' => LunarFormatter::class,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function defaultFeatures(): array
+    {
+        return [
+            'holidays' => [
+                'enabled' => true,
+            ],
+        ];
     }
 }

@@ -24,8 +24,7 @@
     "php": "^8.2",
     "illuminate/support": "^11.0",
     "illuminate/translation": "^11.0",
-    "nesbot/carbon": "^3.0",
-    "asorasoft/chhankitek": "dev-master"
+    "nesbot/carbon": "^3.0"
   },
   "require-dev": {
     "mockery/mockery": "^1.6",
@@ -35,17 +34,9 @@
     "phpunit/phpunit": "^11.0",
     "laravel/pint": "^1.13"
   },
-  "repositories": [
-    {
-      "type": "path",
-      "url": "../chhankitek",
-      "options": {
-        "symlink": true
-      }
-    }
-  ],
   "autoload": {
     "psr-4": {
+      "Lisoing\\": "src/",
       "Lisoing\\Calendar\\": "src/"
     }
   },
