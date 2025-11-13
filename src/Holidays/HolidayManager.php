@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Lisoing\Calendar\Holidays;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Lang;
 use Lisoing\Calendar\Contracts\HolidayProviderInterface;
-use Lisoing\Calendar\ValueObjects\Holiday;
+use Lisoing\Calendar\Support\LocaleResolver;
 use Lisoing\Calendar\ValueObjects\HolidayCollection;
 
 final class HolidayManager
@@ -20,15 +19,22 @@ final class HolidayManager
      */
     private Collection $providers;
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public function __construct(
-        private readonly string $fallbackLocale
+        private readonly string $fallbackLocale,
+        private readonly array $config = []
     ) {
-        $this->providers = collect();
+        /** @var Collection<string, HolidayProviderInterface> $providers */
+        $providers = collect();
+
+        $this->providers = $providers;
     }
 
-    public function register(HolidayProviderInterface $provider): void
+    public function register(string $countryCode, HolidayProviderInterface $provider): void
     {
-        $this->providers->put($provider->countryCode(), $provider);
+        $this->providers->put(strtoupper($countryCode), $provider);
     }
 
     public function provider(string $countryCode): ?HolidayProviderInterface
@@ -46,47 +52,42 @@ final class HolidayManager
             return new HolidayCollection;
         }
 
-        $locale ??= $this->resolveLocale();
+        $locale = $this->resolveLocale($locale);
 
         return $provider->holidaysForYear($year, $locale);
     }
 
     public function translate(string $key, ?string $locale = null): string
     {
-        $locale ??= $this->resolveLocale();
+        $locale = $this->resolveLocale($locale);
 
         return Lang::get($key, [], $locale);
     }
 
-    private function resolveLocale(): string
+    private function resolveLocale(?string $locale): string
     {
-        $locale = App::getLocale();
+        $supported = $this->config['supported_locales'] ?? [];
 
-        if ($locale === null || $locale === '') {
-            return $this->fallbackLocale;
+        if (! is_array($supported)) {
+            $supported = [];
         }
 
-        if (Lang::has('calendar::holidays.placeholder', [], $locale)) {
-            return $locale;
-        }
+        $supported = array_values(array_unique(array_filter(array_map(
+            static fn ($value): string => LocaleResolver::canonicalize(is_string($value) ? $value : ''),
+            $supported
+        ), static fn (string $value): bool => $value !== '')));
 
-        return Config::get('app.fallback_locale', $this->fallbackLocale);
-    }
+        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
 
-    public function wrap(string $identifier, string $country, string $nameKey, string $locale, \DateTimeInterface $date): Holiday
-    {
-        $translation = Lang::get($nameKey, [], $locale);
+        $appLocale = LocaleResolver::canonicalize((string) App::getLocale());
+        $appFallback = LocaleResolver::canonicalize((string) Config::get('app.fallback_locale'));
 
-        if ($translation === $nameKey) {
-            $translation = Lang::get($nameKey, [], $this->fallbackLocale);
-        }
-
-        return new Holiday(
-            identifier: $identifier,
-            name: $translation,
-            date: CarbonImmutable::instance($date),
-            country: $country,
-            locale: $locale
+        return LocaleResolver::resolve(
+            $locale,
+            $supported,
+            $default,
+            $appLocale,
+            $appFallback
         );
     }
 }

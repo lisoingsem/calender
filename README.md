@@ -26,25 +26,29 @@ php artisan vendor:publish --tag=calendar-config
 
 ```php
 use Lisoing\Calendar\Facades\Calendar;
+use Lisoing\Calendar\Facades\Toolkit;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
-$khmerNewYear = new CalendarDate(2025, 13, 1, 'khmer_lunar');
+$khmerNewYear = new CalendarDate(2025, 13, 1, 'khmer_chhankitek');
 
 $gregorian = Calendar::convert($khmerNewYear, 'gregorian');
-
 echo $gregorian->getYear();  // 2025
 echo $gregorian->getMonth(); // 4
 echo $gregorian->getDay();   // 14
+
+$carbon = Toolkit::toDateTime($khmerNewYear); // CarbonImmutable 2025-04-14
+
+$holiday = Toolkit::holiday('khmer_new_year', 2025, 'KH', 'en');
+echo $holiday?->name(); // Khmer New Year
+
+$dates = Toolkit::holidayDates(2025, 'KH');
+echo $dates['khmer_new_year_2025']->toDateString(); // 2025-04-14
 ```
 
 Retrieve holidays for Cambodia (translations fallback to English automatically):
 
 ```php
-use Lisoing\Calendar\Holidays\HolidayManager;
-
-$holidays = app(HolidayManager::class)->forCountry(2025, 'KH', 'km');
-
-foreach ($holidays as $holiday) {
+foreach (Toolkit::holidays(2025, 'KH', 'km') as $holiday) {
     echo "{$holiday->name()} ({$holiday->date()->toDateString()})";
 }
 ```

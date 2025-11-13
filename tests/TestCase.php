@@ -15,4 +15,10 @@ abstract class TestCase extends OrchestraTestCase
             CalendarServiceProvider::class,
         ];
     }
+
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app['config']->set('app.timezone', 'Asia/Phnom_Penh');
+        $app['config']->set('cache.default', 'array');
+    }
 }

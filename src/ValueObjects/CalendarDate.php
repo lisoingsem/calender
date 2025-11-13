@@ -81,8 +81,8 @@ final class CalendarDate
 
     private function assertValid(): void
     {
-        if ($this->month < 1 || $this->month > 13) {
-            throw new InvalidArgumentException('Month must be between 1 and 13.');
+        if ($this->month < 1 || $this->month > 14) {
+            throw new InvalidArgumentException('Month must be between 1 and 14.');
         }
 
         if ($this->day < 1 || $this->day > 31) {
