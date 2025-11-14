@@ -77,6 +77,11 @@ final class CambodiaCalendar implements LunisolarCalendarInterface
         $lunarDay = $lunar->lunarDay();
         $phase = $lunarDay->phaseKey();
 
+        // Get slugs for labels
+        $weekdaySlug = LunisolarConstants::dayOfWeekSlug($lunar->weekdayIndex());
+        $animalYearSlug = LunisolarConstants::animalYearSlug($lunar->animalYearIndex());
+        $eraYearSlug = LunisolarConstants::eraYearSlug($lunar->eraYearIndex());
+
         return new CalendarDate(
             year: (int) $immutable->year,
             month: $monthIndex + 1,
@@ -85,6 +90,9 @@ final class CambodiaCalendar implements LunisolarCalendarInterface
             context: [
                 'phase' => $phase,
                 'month_slug' => $monthSlug,
+                'weekday_slug' => $weekdaySlug,
+                'animal_year_slug' => $animalYearSlug,
+                'era_year_slug' => $eraYearSlug,
                 'gregorian_date' => $immutable->toDateString(),
                 'timezone' => $immutable->timezoneName,
                 'buddhist_era_year' => $lunar->buddhistEraYear(),

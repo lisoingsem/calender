@@ -18,10 +18,13 @@ use Lisoing\Countries\Cambodia;
 // Convert a Gregorian date to Khmer lunar calendar
 $solarDate = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
 
-// Method 1: Using calendar identifier 'km'
+// Method 1: Using Calendar::toLunar() - SIMPLEST WAY
+$lunar = Calendar::toLunar($solarDate, 'km');
+
+// Method 2: Using calendar identifier 'km'
 $lunar = Calendar::for('km')->fromCarbon($solarDate);
 
-// Method 2: Using country helper
+// Method 3: Using country helper
 $lunar = Calendar::for(Cambodia::calendar())->fromCarbon($solarDate);
 
 // Access lunar date information
@@ -29,6 +32,25 @@ echo $lunar->getYear();        // 2025
 echo $lunar->getMonth();        // 5 (lunar month)
 echo $lunar->getDay();          // 15 (lunar day)
 echo $lunar->getCalendar();     // 'km'
+
+// Get formatted components (like chhankitek)
+echo $lunar->getDayOfWeek();     // 'ច័ន្ទ' (Monday)
+echo $lunar->getLunarDay();      // '១៥កើត'
+echo $lunar->getLunarMonth();    // 'ចេត្រ'
+echo $lunar->getLunarYear();     // '២៥៦៩' (Buddhist Era)
+echo $lunar->getAnimalYear();    // 'ឆ្លូវ' (Ox)
+echo $lunar->getEraYear();       // 'ត្រីស័ក'
+echo $lunar->getPhase();         // 'កើត' (Waxing)
+
+// Carbon-style formatting
+echo $lunar->format('dddd D');           // 'ច័ន្ទ 15'
+echo $lunar->format('OD OM OY');          // '១៥ ៥ ២០២៥' (Khmer digits)
+echo $lunar->format('LLLL YYYY');         // '១៥កើត ចេត្រ 2025'
+echo $lunar->format('dddd L MMMM YYYY');  // 'ច័ន្ទ ១៥កើត ចេត្រ 2025'
+
+// Full formatted string (like chhankitek)
+echo $lunar->toString();         // 'ថ្ងៃច័ន្ទ ១៥កើត ខែចេត្រ...'
+echo (string) $lunar;            // Same as toString()
 
 // Get additional context
 $context = $lunar->getContext();
@@ -41,10 +63,16 @@ echo $context['animal_year_index'];  // 0-11
 ### Convert Lunar back to Solar
 
 ```php
-// Convert lunar date back to Gregorian
+// You have a lunar date (CalendarDate object)
+$lunar = Calendar::toLunar($solarDate, 'km');
+
+// Method 1: Using Calendar::toSolar() - SIMPLEST WAY
+$carbonDate = Calendar::toSolar($lunar, 'gregorian');
+echo $carbonDate->toDateString(); // '2025-04-14'
+
+// Method 2: Using Calendar::for() context
 $solar = Calendar::for('gregorian')->fromCalendar($lunar);
 $carbonDate = Calendar::for('gregorian')->toCarbon($solar);
-
 echo $carbonDate->toDateString(); // '2025-04-14'
 ```
 

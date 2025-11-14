@@ -237,6 +237,33 @@ final class LunisolarConstants
         return self::resolveLabels(self::DAY_OF_WEEK_SLUGS, 'weekdays', $locale);
     }
 
+    public static function dayOfWeekSlug(int $index): string
+    {
+        if ($index < 0 || $index >= count(self::DAY_OF_WEEK_SLUGS)) {
+            throw new RuntimeException(sprintf('Invalid day of week index [%d].', $index));
+        }
+
+        return self::DAY_OF_WEEK_SLUGS[$index];
+    }
+
+    public static function animalYearSlug(int $index): string
+    {
+        if ($index < 0 || $index >= count(self::ANIMAL_YEAR_SLUGS)) {
+            throw new RuntimeException(sprintf('Invalid animal year index [%d].', $index));
+        }
+
+        return self::ANIMAL_YEAR_SLUGS[$index];
+    }
+
+    public static function eraYearSlug(int $index): string
+    {
+        if ($index < 0 || $index >= count(self::ERA_YEAR_SLUGS)) {
+            throw new RuntimeException(sprintf('Invalid era year index [%d].', $index));
+        }
+
+        return self::ERA_YEAR_SLUGS[$index];
+    }
+
     /**
      * @return array<string, int>
      */
