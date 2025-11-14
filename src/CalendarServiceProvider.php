@@ -67,6 +67,12 @@ final class CalendarServiceProvider extends ServiceProvider
                 $manager->register($calendar);
             }
 
+            $aliases = array_merge($this->defaultCalendarAliases(), Arr::get($config, 'calendar_aliases', []));
+
+            foreach ($aliases as $alias => $target) {
+                $manager->registerAlias((string) $alias, (string) $target);
+            }
+
             return $manager;
         });
 
@@ -296,6 +302,16 @@ final class CalendarServiceProvider extends ServiceProvider
             'holidays' => [
                 'enabled' => true,
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function defaultCalendarAliases(): array
+    {
+        return [
+            'KH' => 'cambodia_lunisolar',
         ];
     }
 }

@@ -16,46 +16,48 @@ Universal lunar and solar calendar package for Laravel and PHP, maintained by a 
 composer require lisoing/calendar
 ```
 
-Publish the configuration file if you need to customise defaults:
+## Quick Start
 
-```bash
-php artisan vendor:publish --tag=calendar-config
+### Holiday lookups (Spatie-style)
+
+```php
+use Lisoing\Holidays\Holidays;
+use Lisoing\Countries\Cambodia;
+
+// Array of holiday name/date pairs (CarbonImmutable)
+$holidays = Holidays::for(Cambodia::holiday(), year: 2025, locale: 'en')->get();
+
+// or by country code
+$kh2024 = Holidays::for(country: 'KH', year: 2024)->get();
 ```
 
-## Quick Start
+Translations are resolved from `resources/lang/cambodia/{locale}/holidays.php`, mirroring the structure used by Spatie's package and enabling contributors to add locales with a single file.
+
+### Calendar conversions
 
 ```php
 use Carbon\CarbonImmutable;
-use Lisoing\Calendar\Calendars\CambodiaCalendar;
-use Lisoing\Calendar\Facades\Calendar;
-use Lisoing\Calendar\ValueObjects\CalendarDate;
+use Lisoing\Calendar;
+use Lisoing\Countries\Cambodia;
 
-$khmerNewYear = new CalendarDate(2025, 13, 1, 'khmer');
+$gregorian = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
 
-$gregorianDate = Calendar::convert($khmerNewYear, 'gregorian');
-echo $gregorianDate->getYear();  // 2025
-echo $gregorianDate->getMonth(); // 4
-echo $gregorianDate->getDay();   // 14
+$lunarDate = Calendar::for(Cambodia::calendar())->fromCarbon($gregorian);
+$backToSolar = Calendar::for('gregorian')->fromCalendar($lunarDate);
+$carbon = Calendar::for('gregorian')->toCarbon($backToSolar);
 
-$calendar = app(CambodiaCalendar::class);
-$calendarDate = $calendar->fromDateTime(CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh'));
+echo $lunarDate->getCalendar();  // cambodia_lunisolar
+echo $carbon->toDateString();    // 2025-04-14
+```
+
+You can still access the full toolkit for advanced features:
+
+```php
+use Lisoing\Calendar\Support\CalendarToolkit as Toolkit;
 
 $holiday = Toolkit::holiday('khmer_new_year', 2025, 'KH', 'en');
 echo $holiday?->name(); // Khmer New Year
-
-$dates = Toolkit::holidayDates(2025, 'KH');
-echo $dates['khmer_new_year_2025']->toDateString(); // 2025-04-14
 ```
-
-Retrieve holidays for Cambodia (translations fallback to English automatically):
-
-```php
-foreach (Toolkit::holidays(2025, 'KH', 'km') as $holiday) {
-    echo "{$holiday->name()} ({$holiday->date()->toDateString()})";
-}
-```
-
-Holiday translations are resolved from `lang/cambodia/{locale}/holidays.php`, mirroring the structure used by Spatie's holidays project and enabling contributors to drop in additional locales with a single file.
 
 ## Package Structure
 
@@ -63,7 +65,7 @@ Holiday translations are resolved from `lang/cambodia/{locale}/holidays.php`, mi
 - `src/Holidays/Countries/{ISO}/` – Country-specific holiday providers
 - `resources/lang/{locale}/` – Translation dictionaries for holiday labels
 - `tests/Unit` & `tests/Feature` – PHPUnit suites mirroring the src layout
-- `config/calendar.php` – Publishable configuration options
+- `config/calendar.php` – Optional overrides if you need to customise defaults
 
 ## Roadmap
 
@@ -74,6 +76,41 @@ Holiday translations are resolved from `lang/cambodia/{locale}/holidays.php`, mi
 | v1.2.0    | Interactive documentation portal and read-only API explorer           |
 
 See `CHANGELOG.md` for released updates.
+
+## Packagist Setup
+
+### First Release
+
+Before the package can be installed via Composer, you need to create the first release:
+
+1. **Create and push the first tag**:
+   ```bash
+   git tag -a v0.1.0 -m "Initial release"
+   git push origin v0.1.0
+   ```
+
+2. **Submit to Packagist** (if not already submitted):
+   - Visit [packagist.org](https://packagist.org) and log in with your GitHub account
+   - Click "Submit" and enter your repository URL: `https://github.com/lisoing/calendar`
+   - Packagist will automatically detect the tag and create the package
+
+### Enable Auto-Updates
+
+Once the package is on Packagist, enable automatic updates:
+
+1. **Navigate to your package**: Go to `https://packagist.org/packages/lisoing/calendar`
+2. **Set up GitHub Hook**:
+   - Click on "Settings" or "Update" button
+   - Look for "GitHub Hook" or "Auto-Update" section
+   - Click "Update" or "Check Hook" to verify the connection
+   - If not set up, click "Set up GitHub Hook" and authorize Packagist to access your repository
+
+Once configured, Packagist will automatically update the package whenever you:
+- Push commits to the repository
+- Create or update tags (releases)
+- Push to the default branch
+
+**Note**: Make sure your repository URL in `composer.json` matches your GitHub repository URL for the hook to work correctly.
 
 ## Contributing
 

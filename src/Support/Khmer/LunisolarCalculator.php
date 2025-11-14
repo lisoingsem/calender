@@ -201,15 +201,7 @@ final class LunisolarCalculator
     {
         $lunarMonths = LunisolarConstants::lunarMonths();
 
-        $date = CarbonImmutable::create(
-            year: $gregorianYear,
-            month: 1,
-            day: 1,
-            hour: 0,
-            minute: 0,
-            second: 0,
-            tz: LunisolarConstants::TIMEZONE
-        );
+        $date = CarbonImmutable::create($gregorianYear, 1, 1, 0, 0, 0, LunisolarConstants::TIMEZONE);
 
         for ($i = 0; $i < 370; $i++) {
             $position = $this->findLunarPosition($date);

@@ -9,6 +9,7 @@ use Carbon\CarbonInterface;
 use Lisoing\Calendar\Contracts\HolidayProviderInterface;
 use Lisoing\Calendar\Holidays\HolidayManager;
 use Lisoing\Calendar\ValueObjects\Holiday;
+use Lisoing\Countries\Country;
 
 final class Holidays
 {
@@ -19,9 +20,9 @@ final class Holidays
     ) {}
 
     /**
-     * @param  HolidayProviderInterface|string  $country
+     * @param  HolidayProviderInterface|Country|string  $country
      */
-    public static function for(HolidayProviderInterface|string $country, ?int $year = null, ?string $locale = null): self
+    public static function for(HolidayProviderInterface|Country|string $country, ?int $year = null, ?string $locale = null): self
     {
         $year ??= CarbonImmutable::now()->year;
 
@@ -33,18 +34,18 @@ final class Holidays
     }
 
     /**
-     * @param  HolidayProviderInterface|string  $country
+     * @param  HolidayProviderInterface|Country|string  $country
      */
-    public static function has(HolidayProviderInterface|string $country): bool
+    public static function has(HolidayProviderInterface|Country|string $country): bool
     {
         return self::manager()->provider(self::resolveCountryCode($country)) !== null;
     }
 
     /**
-     * @param  HolidayProviderInterface|string|null  $country
+     * @param  HolidayProviderInterface|Country|string|null  $country
      * @return array<int, array{name: string, date: CarbonImmutable}>
      */
-    public function get(HolidayProviderInterface|string|null $country = null, ?int $year = null): array
+    public function get(HolidayProviderInterface|Country|string|null $country = null, ?int $year = null): array
     {
         $code = $country !== null ? self::resolveCountryCode($country) : $this->countryCode;
         $year ??= $this->year;
@@ -59,12 +60,12 @@ final class Holidays
     }
 
     /**
-     * @param  HolidayProviderInterface|string|null  $country
+     * @param  HolidayProviderInterface|Country|string|null  $country
      */
     public function getInRange(
         CarbonInterface|string $from,
         CarbonInterface|string $to,
-        HolidayProviderInterface|string|null $country = null
+        HolidayProviderInterface|Country|string|null $country = null
     ): array {
         [$start, $end] = self::normalizeRange($from, $to);
         $code = $country !== null ? self::resolveCountryCode($country) : $this->countryCode;
@@ -76,11 +77,11 @@ final class Holidays
     }
 
     /**
-     * @param  HolidayProviderInterface|string|null  $country
+     * @param  HolidayProviderInterface|Country|string|null  $country
      */
     public function isHoliday(
         CarbonInterface|string $date,
-        HolidayProviderInterface|string|null $country = null
+        HolidayProviderInterface|Country|string|null $country = null
     ): bool {
         $candidate = $date instanceof CarbonImmutable ? $date : CarbonImmutable::parse($date);
         $code = $country !== null ? self::resolveCountryCode($country) : $this->countryCode;
@@ -96,11 +97,11 @@ final class Holidays
     }
 
     /**
-     * @param  HolidayProviderInterface|string|null  $country
+     * @param  HolidayProviderInterface|Country|string|null  $country
      */
     public function getName(
         CarbonInterface|string $date,
-        HolidayProviderInterface|string|null $country = null
+        HolidayProviderInterface|Country|string|null $country = null
     ): ?string {
         $candidate = $date instanceof CarbonImmutable ? $date : CarbonImmutable::parse($date);
         $code = $country !== null ? self::resolveCountryCode($country) : $this->countryCode;
@@ -116,12 +117,16 @@ final class Holidays
     }
 
     /**
-     * @param  HolidayProviderInterface|string  $country
+     * @param  HolidayProviderInterface|Country|string  $country
      */
-    private static function resolveCountryCode(HolidayProviderInterface|string $country): string
+    private static function resolveCountryCode(HolidayProviderInterface|Country|string $country): string
     {
         if (is_string($country)) {
             return strtoupper($country);
+        }
+
+        if ($country instanceof Country) {
+            return $country::code();
         }
 
         return strtoupper($country->countryCode());

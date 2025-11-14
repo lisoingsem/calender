@@ -9,7 +9,7 @@ use Carbon\CarbonInterface;
 use Lisoing\Calendar\Contracts\SolarCalendarInterface;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
-final class GregorianCalendar implements SolarCalendarInterface
+class GregorianCalendar implements SolarCalendarInterface
 {
     private string $timezone;
 
@@ -38,13 +38,13 @@ final class GregorianCalendar implements SolarCalendarInterface
         $tz = is_string($timezone) && $timezone !== '' ? $timezone : $this->timezone;
 
         return CarbonImmutable::create(
-            year: $date->getYear(),
-            month: $date->getMonth(),
-            day: $date->getDay(),
-            hour: 0,
-            minute: 0,
-            second: 0,
-            tz: $tz
+            $date->getYear(),
+            $date->getMonth(),
+            $date->getDay(),
+            0,
+            0,
+            0,
+            $tz
         );
     }
 

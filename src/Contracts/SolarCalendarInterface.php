@@ -8,3 +8,4 @@ interface SolarCalendarInterface extends CalendarInterface, ConfigurableCalendar
 {
 }
 
+

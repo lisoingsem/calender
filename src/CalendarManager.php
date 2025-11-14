@@ -8,6 +8,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Exceptions\CalendarNotFoundException;
+use Lisoing\Calendar\Support\CalendarContext;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
 final class CalendarManager
@@ -16,6 +17,11 @@ final class CalendarManager
      * @var Collection<string, CalendarInterface>
      */
     private Collection $calendars;
+
+    /**
+     * @var array<string, string>
+     */
+    private array $aliases = [];
 
     public function __construct(
         private readonly string $defaultCalendar,
@@ -42,8 +48,15 @@ final class CalendarManager
         $this->calendars->put($calendar->identifier(), $calendar);
     }
 
+    public function registerAlias(string $alias, string $calendarIdentifier): void
+    {
+        $this->aliases[strtoupper($alias)] = $calendarIdentifier;
+    }
+
     public function calendar(string $identifier): CalendarInterface
     {
+        $identifier = $this->aliases[strtoupper($identifier)] ?? $identifier;
+
         $calendar = $this->calendars->get($identifier);
 
         if ($calendar === null) {
@@ -82,5 +95,37 @@ final class CalendarManager
         $calendar = $this->calendar($identifier);
 
         return $calendar->fromDateTime($dateTime);
+    }
+
+    public function toLunar(CarbonInterface $dateTime, ?string $calendarIdentifier = null): CalendarDate
+    {
+        return $this->fromDateTime($dateTime, $calendarIdentifier);
+    }
+
+    public function toSolar(CalendarDate $date, string $targetIdentifier = 'gregorian'): CarbonInterface
+    {
+        $converted = $this->convert($date, $targetIdentifier);
+
+        return $this->toDateTime($converted);
+    }
+
+    /**
+     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface  $calendar
+     */
+    public function for(string|CalendarInterface $calendar): CalendarContext
+    {
+        return $this->using($calendar);
+    }
+
+    /**
+     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface  $calendar
+     */
+    public function using(string|CalendarInterface $calendar): CalendarContext
+    {
+        $identifier = $calendar instanceof CalendarInterface
+            ? $calendar->identifier()
+            : (string) $calendar;
+
+        return new CalendarContext($this, $identifier);
     }
 }
