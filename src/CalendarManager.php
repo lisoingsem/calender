@@ -6,9 +6,12 @@ namespace Lisoing\Calendar;
 
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Config;
 use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Exceptions\CalendarNotFoundException;
 use Lisoing\Calendar\Support\CalendarContext;
+use Lisoing\Calendar\Support\LocaleResolver;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
 final class CalendarManager
@@ -41,6 +44,26 @@ final class CalendarManager
     public function getFallbackLocale(): string
     {
         return $this->fallbackLocale;
+    }
+
+    /**
+     * Resolve locale from parameter or Laravel's current locale.
+     * Uses the fallback locale configured in the service provider.
+     */
+    public function resolveLocale(?string $locale): string
+    {
+        $appLocale = LocaleResolver::canonicalize((string) App::getLocale());
+        $appFallback = LocaleResolver::canonicalize((string) Config::get('app.fallback_locale'));
+        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
+
+        if ($locale !== null && $locale !== '') {
+            $canonicalLocale = LocaleResolver::canonicalize($locale);
+            if ($canonicalLocale !== '') {
+                return $canonicalLocale;
+            }
+        }
+
+        return $appLocale ?: $appFallback ?: $default;
     }
 
     public function register(CalendarInterface $calendar): void
@@ -90,14 +113,9 @@ final class CalendarManager
 
     public function fromDateTime(CarbonInterface $dateTime, ?string $calendarIdentifier = null): CalendarDate
     {
-        if ($calendarIdentifier === null && $this->defaultCalendar === null) {
-            throw new \RuntimeException(
-                'No calendar identifier provided and no default calendar is set. ' .
-                'Please specify a calendar: Calendar::for("km")->fromCarbon($date) or set a default calendar in config.'
-            );
-        }
-
-        $identifier = $calendarIdentifier ?? $this->defaultCalendar;
+        // Default to 'gregorian' if no calendar is specified and no default is set
+        // 'gregorian' is always registered, so this is safe
+        $identifier = $calendarIdentifier ?? $this->defaultCalendar ?? 'gregorian';
 
         $calendar = $this->calendar($identifier);
 

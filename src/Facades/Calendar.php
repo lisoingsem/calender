@@ -9,6 +9,8 @@ use Lisoing\Calendar\CalendarManager;
 
 /**
  * @method static string|null getDefaultCalendar()
+ * @method static string getFallbackLocale()
+ * @method static string resolveLocale(?string $locale)
  * @method static \Lisoing\Calendar\Support\CalendarContext for(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\Support\CalendarContext using(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate convert(\Lisoing\Calendar\ValueObjects\CalendarDate $date, string $targetIdentifier)

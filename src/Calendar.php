@@ -10,6 +10,8 @@ use Lisoing\Calendar\Facades\Calendar as CalendarFacade;
  * Proxy to the calendar facade for ergonomic `use Lisoing\Calendar;` imports.
  *
  * @method static string|null getDefaultCalendar()
+ * @method static string getFallbackLocale()
+ * @method static string resolveLocale(?string $locale)
  * @method static \Lisoing\Calendar\Support\CalendarContext for(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\Support\CalendarContext using(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate convert(\Lisoing\Calendar\ValueObjects\CalendarDate $date, string $targetIdentifier)

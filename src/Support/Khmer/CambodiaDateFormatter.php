@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lisoing\Calendar\Support\Khmer;
 
 use Illuminate\Support\Facades\Lang;
+use Lisoing\Calendar\Facades\Calendar;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 
 /**
@@ -14,28 +15,41 @@ use Lisoing\Calendar\ValueObjects\CalendarDate;
 final class CambodiaDateFormatter
 {
     /**
+     * Resolve locale from parameter or Laravel's current locale.
+     * Uses CalendarManager's locale resolution (configured in service provider).
+     */
+    private static function resolveLocale(?string $locale): string
+    {
+        return Calendar::resolveLocale($locale);
+    }
+
+    /**
      * Format lunar day like chhankitek (e.g., "១កើត", "១៤រោច").
      */
     public static function formatDay(CalendarDate $date, ?string $locale = null): string
     {
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $phase = $date->getContextValue('phase', $date->getDay() <= 15 ? 'waxing' : 'waning');
         $phaseDay = ($date->getDay() % 15) + 1;
 
         // Load translations
         $phases = Lang::get("cambodia::lunisolar.phases", [], $locale);
-        $khmerDigits = LunisolarConstants::khmerDigits();
 
         $phaseLabel = is_array($phases) ? ($phases[$phase] ?? ($phase === 'waxing' ? 'កើត' : 'រោច')) : ($phase === 'waxing' ? 'កើត' : 'រោច');
 
-        // Convert day number to Khmer digits
-        $dayStr = (string) $phaseDay;
-        $khmerDay = '';
-        foreach (str_split($dayStr) as $digit) {
-            $khmerDay .= $khmerDigits[$digit] ?? $digit;
+        // Use Khmer digits only for Khmer locale, regular digits for other locales
+        if ($locale === 'km' || str_starts_with($locale, 'km_')) {
+            $khmerDigits = LunisolarConstants::khmerDigits();
+            $dayStr = (string) $phaseDay;
+            $khmerDay = '';
+            foreach (str_split($dayStr) as $digit) {
+                $khmerDay .= $khmerDigits[$digit] ?? $digit;
+            }
+            return $khmerDay . $phaseLabel;
         }
 
-        return $khmerDay . $phaseLabel;
+        // For non-Khmer locales, use regular digits
+        return (string) $phaseDay . $phaseLabel;
     }
 
     /**
@@ -48,7 +62,7 @@ final class CambodiaDateFormatter
             return '';
         }
 
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $key = "cambodia::lunisolar.weekdays";
         $labels = Lang::get($key, [], $locale);
 
@@ -71,7 +85,7 @@ final class CambodiaDateFormatter
             return '';
         }
 
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $key = "cambodia::lunisolar.lunar_months";
         $labels = Lang::get($key, [], $locale);
 
@@ -94,7 +108,7 @@ final class CambodiaDateFormatter
             return (string) $date->getYear();
         }
 
-        return self::formatAlternativeNumber((int) $beYear, $locale ?? 'km');
+        return self::formatAlternativeNumber((int) $beYear, self::resolveLocale($locale));
     }
 
     /**
@@ -107,7 +121,7 @@ final class CambodiaDateFormatter
             return '';
         }
 
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $key = "cambodia::lunisolar.animal_years";
         $labels = Lang::get($key, [], $locale);
 
@@ -130,7 +144,7 @@ final class CambodiaDateFormatter
             return '';
         }
 
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $key = "cambodia::lunisolar.era_years";
         $labels = Lang::get($key, [], $locale);
 
@@ -149,7 +163,7 @@ final class CambodiaDateFormatter
     public static function getPhase(CalendarDate $date, ?string $locale = null): string
     {
         $phase = $date->getContextValue('phase', $date->getDay() <= 15 ? 'waxing' : 'waning');
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
 
         $phases = Lang::get("cambodia::lunisolar.phases", [], $locale);
 
@@ -165,7 +179,7 @@ final class CambodiaDateFormatter
      */
     public static function toString(CalendarDate $date, ?string $locale = null): string
     {
-        $locale = $locale ?? 'km';
+        $locale = self::resolveLocale($locale);
         $dayOfWeek = self::getDayOfWeek($date, $locale);
         $lunarDay = self::formatDay($date, $locale);
         $lunarMonth = self::getLunarMonth($date, $locale);
