@@ -47,6 +47,8 @@ See `CambodiaCalendar.php` for a complete working example.
 
 ## Quick Start
 
+📖 **For detailed usage examples, see [USAGE.md](USAGE.md)**
+
 ### Holiday lookups (Spatie-style)
 
 ```php
@@ -120,14 +122,28 @@ $result = Calendar::for('gregorian')
     ->toString();            // Format as string
 ```
 
-You can still access the full toolkit for advanced features:
+### Getting Holidays
 
 ```php
-use Lisoing\Calendar\Support\CalendarToolkit as Toolkit;
+use Lisoing\Calendar\Holidays\HolidayManager;
+use Lisoing\Calendar\Support\CalendarToolkit;
 
-$holiday = Toolkit::holiday('khmer_new_year', 2025, 'KH', 'en');
-echo $holiday?->name(); // Khmer New Year
+// Method 1: Using HolidayManager
+$manager = app(HolidayManager::class);
+$holidays = $manager->forCountry(2025, 'KH', 'en');
+
+foreach ($holidays as $holiday) {
+    echo $holiday->name();           // Holiday name
+    echo $holiday->date()->format('Y-m-d'); // Date
+}
+
+// Method 2: Using CalendarToolkit
+$toolkit = CalendarToolkit::make();
+$newYear = $toolkit->holiday('khmer_new_year', 2025, 'KH', 'en');
+echo $newYear?->name(); // Khmer New Year
 ```
+
+For more examples, see [USAGE.md](USAGE.md).
 
 ## Package Structure
 
@@ -188,6 +204,12 @@ Once configured, Packagist will automatically update the package whenever you:
 - Push to the default branch
 
 **Note**: Make sure your repository URL in `composer.json` matches your GitHub repository URL for the hook to work correctly.
+
+## Documentation
+
+- 📖 **[USAGE.md](USAGE.md)** - Complete guide for using Calendar and Holidays
+- 📝 **[EXAMPLES.md](EXAMPLES.md)** - Code examples and use cases
+- 🔧 **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
 
 ## Contributing
 
