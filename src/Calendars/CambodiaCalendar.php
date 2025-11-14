@@ -24,7 +24,7 @@ final class CambodiaCalendar implements LunisolarCalendarInterface
 
     public function identifier(): string
     {
-        return 'cambodia_lunisolar';
+        return 'km';
     }
 
     public function configure(array $settings): void

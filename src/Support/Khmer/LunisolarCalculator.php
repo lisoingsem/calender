@@ -15,6 +15,8 @@ final class LunisolarCalculator
     /** @var array<string, LunarPosition> */
     private array $positionCache = [];
 
+    private ?SongkranCalculator $songkranCalculator = null;
+
     public function toLunar(CarbonImmutable $date): LunarDate
     {
         $normalized = $date
@@ -86,30 +88,102 @@ final class LunisolarCalculator
 
     public function getKhmerNewYearDate(int $gregorianYear): CarbonImmutable
     {
-        $snapshot = $this->buildNewYearSnapshot($gregorianYear);
+        $info = $this->getKhmerNewYearInfo($gregorianYear);
 
-        $time = $snapshot->timeOfNewYear();
-        $hour = $time->hour();
-        $minute = $time->minute();
+        return $info->songkranDate();
+    }
 
-        $base = CarbonImmutable::create($gregorianYear, 4, 17, $hour, $minute, 0, LunisolarConstants::TIMEZONE);
+    /**
+     * Get comprehensive Khmer New Year information using historical algorithms.
+     *
+     * @param  int  $gregorianYear  Gregorian year
+     * @return KhmerNewYearInfo
+     */
+    public function getKhmerNewYearInfo(int $gregorianYear): KhmerNewYearInfo
+    {
+        $calculator = $this->getSongkranCalculator();
+        $songkranData = $calculator->getSongkran($gregorianYear);
+        $vonobotDays = $songkranData[0];
+        $songkranTime = $songkranData[1];
 
-        $lerngSak = $snapshot->lerngSakDate();
-        $position = $this->findLunarPosition($base);
+        $leungsakData = $calculator->getLeungsak($gregorianYear);
+        $leungsakDay = $leungsakData[0];
+        $leungsakMonth = $leungsakData[1];
 
-        $currentOrdinal = (($position->month() - 4) * 30) + $position->day();
-        $lerngSakOrdinal = (($lerngSak->month() - 4) * 30) + $lerngSak->day();
-        $daysDifference = $currentOrdinal - $lerngSakOrdinal;
+        // Calculate Songkran date
+        // Start from April 17 as base, then adjust based on Leungsak
+        $base = CarbonImmutable::create(
+            $gregorianYear,
+            4,
+            17,
+            $songkranTime[0],
+            $songkranTime[1],
+            0,
+            LunisolarConstants::TIMEZONE
+        );
 
-        $firstSotin = $snapshot->sotins()[0] ?? null;
+        // Find the actual Leungsak date in lunar calendar
+        $lerngSakLunar = $this->findLunarDateForMonthAndDay($gregorianYear, $leungsakMonth, $leungsakDay);
+        $lerngSakGregorian = $lerngSakLunar;
 
-        if (! $firstSotin instanceof SolarNewYearDay) {
-            throw new RuntimeException('Failed to determine sotin sequence.');
+        // Calculate Songkran date: Leungsak - (Vonobot days + 1)
+        $songkranDate = $lerngSakGregorian->subDays($vonobotDays + 1);
+
+        // Get day of week for Songkran (0=Sunday, 1=Monday, ..., 6=Saturday)
+        $dayOfWeek = $songkranDate->dayOfWeek; // Carbon uses 0=Sunday
+
+        // Get the New Year angel based on day of week
+        $angel = NewYearAngels::getAngelForDay($dayOfWeek);
+
+        $duration = $vonobotDays === 2 ? 4 : 3;
+
+        return new KhmerNewYearInfo(
+            songkranDate: $songkranDate,
+            songkranTime: $songkranTime,
+            vonobotDays: $vonobotDays,
+            leungsakDate: $lerngSakGregorian,
+            duration: $duration,
+            dayOfWeek: $dayOfWeek,
+            angel: $angel,
+            leungsakLunar: [$leungsakDay, $leungsakMonth]
+        );
+    }
+
+    /**
+     * Find Gregorian date for a specific lunar month and day.
+     *
+     * @param  int  $gregorianYear  Gregorian year
+     * @param  int  $lunarMonth  Lunar month (5=Chaet, 6=Visak) - 1-based
+     * @param  int  $lunarDay  Lunar day (1-15)
+     * @return CarbonImmutable
+     */
+    private function findLunarDateForMonthAndDay(int $gregorianYear, int $lunarMonth, int $lunarDay): CarbonImmutable
+    {
+        // Convert 1-based month (5=Chaet, 6=Visak) to 0-based index
+        // Month 5 (Chaet) = index 4, Month 6 (Visak) = index 5
+        $lunarMonthIndex = $lunarMonth - 1;
+
+        $start = CarbonImmutable::create($gregorianYear, 4, 1, 0, 0, 0, LunisolarConstants::TIMEZONE);
+        $end = $start->addDays(60);
+
+        for ($date = $start; $date->lessThanOrEqualTo($end); $date = $date->addDay()) {
+            $position = $this->findLunarPosition($date);
+
+            if ($position->month() === $lunarMonthIndex && $position->day() === $lunarDay) {
+                return $date;
+            }
         }
 
-        $newYearDays = $firstSotin->angsar() === 0 ? 4 : 3;
+        throw new RuntimeException("Unable to find lunar date: month {$lunarMonth} (index {$lunarMonthIndex}), day {$lunarDay} for year {$gregorianYear}.");
+    }
 
-        return $base->subDays($daysDifference + $newYearDays - 1);
+    private function getSongkranCalculator(): SongkranCalculator
+    {
+        if ($this->songkranCalculator === null) {
+            $this->songkranCalculator = new SongkranCalculator();
+        }
+
+        return $this->songkranCalculator;
     }
 
     /**

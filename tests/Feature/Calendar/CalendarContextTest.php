@@ -17,7 +17,7 @@ final class CalendarContextTest extends TestCase
 
         $lunar = Calendar::for(Cambodia::calendar())->fromCarbon($date);
 
-        $this->assertSame('cambodia_lunisolar', $lunar->getCalendar());
+        $this->assertSame('km', $lunar->getCalendar());
         $this->assertSame(2025, $lunar->getYear());
     }
 

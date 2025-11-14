@@ -14,9 +14,9 @@ final class CalendarFacadeTest extends TestCase
     {
         $gregorian = CarbonImmutable::create(2025, 4, 14, 0, 0, 0, 'Asia/Phnom_Penh');
 
-        $lunarDate = Calendar::toLunar($gregorian, 'cambodia_lunisolar');
+        $lunarDate = Calendar::toLunar($gregorian, 'km');
 
-        $this->assertSame('cambodia_lunisolar', $lunarDate->getCalendar());
+        $this->assertSame('km', $lunarDate->getCalendar());
 
         $backToGregorian = Calendar::toSolar($lunarDate, 'gregorian');
 

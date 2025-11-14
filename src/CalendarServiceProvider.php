@@ -8,18 +8,17 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
-use Lisoing\Calendar\Calendars\CambodiaCalendar;
 use Lisoing\Calendar\Calendars\GregorianCalendar;
-use Lisoing\Calendar\Calendars\NepalCalendar;
 use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Contracts\ConfigurableCalendarInterface;
 use Lisoing\Calendar\Contracts\ConfigurableHolidayProviderInterface;
 use Lisoing\Calendar\Contracts\HolidayProviderInterface;
 use Lisoing\Calendar\Formatting\FormatterManager;
 use Lisoing\Calendar\Formatting\LunarFormatter;
-use Lisoing\Calendar\Holidays\Countries\Cambodia;
 use Lisoing\Calendar\Holidays\HolidayManager;
 use Lisoing\Calendar\Support\CalendarToolkit;
+use Lisoing\Countries\Country;
+use Lisoing\Countries\Registry;
 
 final class CalendarServiceProvider extends ServiceProvider
 {
@@ -45,10 +44,56 @@ final class CalendarServiceProvider extends ServiceProvider
                 fallbackLocale: $fallbackLocale
             );
 
-            $calendars = array_merge($this->defaultCalendars(), Arr::get($config, 'calendars', []));
-            $settings = array_replace_recursive($this->defaultCalendarSettings(), Arr::get($config, 'calendar_settings', []));
+            // Always register gregorian calendar
+            $gregorianCalendar = self::resolveCalendar($container, GregorianCalendar::class);
+            $gregorianSettings = Arr::get($config, 'calendar_settings.gregorian', ['timezone' => 'UTC']);
+            if ($gregorianCalendar instanceof ConfigurableCalendarInterface) {
+                $gregorianCalendar->configure($gregorianSettings);
+            }
+            $manager->register($gregorianCalendar);
 
+            // Auto-discover and register country classes
+            $this->discoverCountries();
+
+            // Discover calendars from Country classes
+            $calendars = Arr::get($config, 'calendars', []);
+            $settings = Arr::get($config, 'calendar_settings', []);
+
+            foreach (Registry::all() as $countryCode => $countryClass) {
+                $calendarClass = $countryClass::calendarClass();
+
+                // Skip if calendarClass returns country code (no calendar defined)
+                if (is_string($calendarClass) && class_exists($calendarClass)) {
+                    $calendar = self::resolveCalendar($container, $calendarClass);
+                    $identifier = $calendar->identifier();
+
+                    if ($calendar instanceof ConfigurableCalendarInterface) {
+                        $calendar->configure($settings[$identifier] ?? []);
+                    }
+
+                    $manager->register($calendar);
+
+                    // Register country code as alias to calendar identifier
+                    $manager->registerAlias($countryCode, $identifier);
+                }
+            }
+
+            // Track registered calendar identifiers
+            $registeredIdentifiers = ['gregorian'];
+            foreach (Registry::all() as $countryCode => $countryClass) {
+                $calendarClass = $countryClass::calendarClass();
+                if (is_string($calendarClass) && class_exists($calendarClass)) {
+                    $tempCalendar = self::resolveCalendar($container, $calendarClass);
+                    $registeredIdentifiers[] = $tempCalendar->identifier();
+                }
+            }
+
+            // Register additional calendars from config
             foreach ($calendars as $identifier => $calendarClass) {
+                if (in_array($identifier, $registeredIdentifiers, true)) {
+                    continue; // Skip if already registered
+                }
+
                 $calendar = self::resolveCalendar($container, $calendarClass);
 
                 if ($calendar instanceof ConfigurableCalendarInterface) {
@@ -67,8 +112,8 @@ final class CalendarServiceProvider extends ServiceProvider
                 $manager->register($calendar);
             }
 
-            $aliases = array_merge($this->defaultCalendarAliases(), Arr::get($config, 'calendar_aliases', []));
-
+            // Register additional aliases from config
+            $aliases = Arr::get($config, 'calendar_aliases', []);
             foreach ($aliases as $alias => $target) {
                 $manager->registerAlias((string) $alias, (string) $target);
             }
@@ -80,7 +125,22 @@ final class CalendarServiceProvider extends ServiceProvider
 
         $this->app->singleton(FormatterManager::class, function (Container $container): FormatterManager {
             $config = $container->make('config')->get('calendar', []);
-            $formatters = array_merge($this->defaultFormatters(), Arr::get($config, 'formatters', []));
+            $formatters = Arr::get($config, 'formatters', []);
+
+            // Auto-discover formatters from calendars via Country classes
+            foreach (Registry::all() as $countryCode => $countryClass) {
+                $calendarClass = $countryClass::calendarClass();
+                if (is_string($calendarClass) && class_exists($calendarClass)) {
+                    $tempCalendar = self::resolveCalendar($container, $calendarClass);
+                    $identifier = $tempCalendar->identifier();
+                    // Register lunar formatter for lunisolar calendars
+                    if ($tempCalendar instanceof \Lisoing\Calendar\Contracts\LunisolarCalendarInterface) {
+                        if (! isset($formatters[$identifier])) {
+                            $formatters[$identifier] = LunarFormatter::class;
+                        }
+                    }
+                }
+            }
 
             return new FormatterManager(
                 container: $container,
@@ -91,16 +151,7 @@ final class CalendarServiceProvider extends ServiceProvider
         });
 
         $this->app->bind('calendar.formatter', static fn (Container $container): FormatterManager => $container->make(FormatterManager::class));
-
-        /** @var \Illuminate\Contracts\Config\Repository $configRepository */
-        $configRepository = $this->app->make('config');
-        $calendarConfig = $configRepository->get('calendar', []);
-        $features = array_replace_recursive($this->defaultFeatures(), Arr::get($calendarConfig, 'features', []));
-        $holidaysEnabled = (bool) Arr::get($features, 'holidays.enabled', true);
-
-        if ($holidaysEnabled) {
-            $this->registerHolidayManager();
-        }
+        $this->registerHolidayManager();
 
         $this->registerToolkit();
     }
@@ -131,10 +182,38 @@ final class CalendarServiceProvider extends ServiceProvider
                 ]
             );
 
-            $providers = array_merge($this->defaultCountries(), Arr::get($config, 'countries', []));
-            $settings = array_replace_recursive($this->defaultHolidaySettings(), Arr::get($config, 'holiday_settings', []));
+            // Discover providers from Country classes
+            $providers = Arr::get($config, 'countries', []);
+            $settings = Arr::get($config, 'holiday_settings', []);
 
+            foreach (Registry::all() as $countryCode => $countryClass) {
+                $provider = $countryClass::make()->provider();
+
+                if ($provider instanceof ConfigurableHolidayProviderInterface) {
+                    $provider->configure($settings[strtoupper($countryCode)] ?? []);
+                }
+
+                if (strtoupper($countryCode) !== strtoupper($provider->countryCode())) {
+                    throw new BindingResolutionException(sprintf(
+                        'Country code [%s] does not match provider [%s] identifier [%s].',
+                        $countryCode,
+                        $countryClass,
+                        $provider->countryCode()
+                    ));
+                }
+
+                $manager->register($countryCode, $provider);
+            }
+
+            // Track registered country codes
+            $registeredCountryCodes = array_keys(Registry::all());
+
+            // Register additional providers from config
             foreach ($providers as $countryCode => $providerClass) {
+                if (in_array(strtoupper((string) $countryCode), $registeredCountryCodes, true)) {
+                    continue; // Skip if already registered
+                }
+
                 $provider = self::resolveHolidayProvider($container, $providerClass);
 
                 if ($provider instanceof ConfigurableHolidayProviderInterface) {
@@ -160,27 +239,14 @@ final class CalendarServiceProvider extends ServiceProvider
     private function registerToolkit(): void
     {
         $this->app->singleton(CalendarToolkit::class, function (Container $container): CalendarToolkit {
-            /** @var \Illuminate\Contracts\Config\Repository $configRepository */
-            $configRepository = $container->make('config');
-            $config = $configRepository->get('calendar', []);
-            $features = array_replace_recursive($this->defaultFeatures(), Arr::get($config, 'features', []));
-            $holidaysEnabled = (bool) Arr::get($features, 'holidays.enabled', true);
-
-            $holidayManager = null;
-
-            if ($holidaysEnabled && $container->bound(HolidayManager::class)) {
-                $holidayManager = $container->make(HolidayManager::class);
-            }
+            $holidayManager = $container->bound(HolidayManager::class)
+                ? $container->make(HolidayManager::class)
+                : null;
 
             return new CalendarToolkit(
                 calendarManager: $container->make(CalendarManager::class),
                 formatterManager: $container->make(FormatterManager::class),
-                holidayManager: $holidayManager,
-                features: [
-                    'holidays' => [
-                        'enabled' => $holidaysEnabled,
-                    ],
-                ]
+                holidayManager: $holidayManager
             );
         });
 
@@ -226,92 +292,34 @@ final class CalendarServiceProvider extends ServiceProvider
     }
 
     /**
-     * @return array<string, class-string<CalendarInterface>>
+     * Auto-discover and register country classes from the Countries directory.
      */
-    private function defaultCalendars(): array
+    private function discoverCountries(): void
     {
-        return [
-            'gregorian' => GregorianCalendar::class,
-            'cambodia_lunisolar' => CambodiaCalendar::class,
-            'nepal_gregorian' => NepalCalendar::class,
-        ];
+        $countriesPath = __DIR__.'/Countries';
+
+        if (! is_dir($countriesPath)) {
+            return;
+        }
+
+        foreach (glob($countriesPath.'/*.php') as $filename) {
+            if (basename($filename) === 'Country.php' || basename($filename) === 'Registry.php') {
+                continue;
+            }
+
+            $className = 'Lisoing\\Countries\\'.basename($filename, '.php');
+
+            if (! class_exists($className)) {
+                continue;
+            }
+
+            if (! is_subclass_of($className, Country::class)) {
+                continue;
+            }
+
+            // Register the country
+            $className::register();
+        }
     }
 
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function defaultCalendarSettings(): array
-    {
-        return [
-            'gregorian' => [
-                'timezone' => 'UTC',
-            ],
-            'cambodia_lunisolar' => [
-                'timezone' => 'Asia/Phnom_Penh',
-            ],
-            'nepal_gregorian' => [
-                'timezone' => 'Asia/Kathmandu',
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, class-string<HolidayProviderInterface>>
-     */
-    private function defaultCountries(): array
-    {
-        return [
-            'KH' => Cambodia::class,
-        ];
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function defaultHolidaySettings(): array
-    {
-        return [
-            'KH' => [
-                'observances' => [
-                    'khmer_new_year' => [
-                        'metadata' => [
-                            'notes' => 'Observed over three days according to lunisolar cycle.',
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, class-string>
-     */
-    private function defaultFormatters(): array
-    {
-        return [
-            'cambodia_lunisolar' => LunarFormatter::class,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function defaultFeatures(): array
-    {
-        return [
-            'holidays' => [
-                'enabled' => true,
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function defaultCalendarAliases(): array
-    {
-        return [
-            'KH' => 'cambodia_lunisolar',
-        ];
-    }
 }

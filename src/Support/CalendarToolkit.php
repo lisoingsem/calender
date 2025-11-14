@@ -18,8 +18,7 @@ final class CalendarToolkit
     public function __construct(
         private readonly CalendarManager $calendarManager,
         private readonly ?FormatterManager $formatterManager = null,
-        private readonly ?HolidayManager $holidayManager = null,
-        private readonly array $features = []
+        private readonly ?HolidayManager $holidayManager = null
     ) {
     }
 
@@ -55,7 +54,7 @@ final class CalendarToolkit
 
     public function holidays(int $year, string $countryCode, ?string $locale = null): HolidayCollection
     {
-        if (! $this->isHolidaysEnabled() || $this->holidayManager === null) {
+        if ($this->holidayManager === null) {
             return new HolidayCollection;
         }
 
@@ -88,7 +87,7 @@ final class CalendarToolkit
 
     public function isHolidaysEnabled(): bool
     {
-        return (bool) ($this->features['holidays']['enabled'] ?? true);
+        return $this->holidayManager !== null;
     }
 
     public function calendars(): Collection

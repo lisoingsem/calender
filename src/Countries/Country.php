@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lisoing\Countries;
 
 use InvalidArgumentException;
+use Lisoing\Calendar\Contracts\CalendarInterface;
 use Lisoing\Calendar\Contracts\HolidayProviderInterface;
 
 abstract class Country
@@ -33,6 +34,16 @@ abstract class Country
     public static function calendar(): string
     {
         return static::CALENDAR ?? static::code();
+    }
+
+    /**
+     * Get the calendar class(es) for this country.
+     *
+     * @return class-string<CalendarInterface>|array<string, class-string<CalendarInterface>>
+     */
+    public static function calendarClass(): string|array
+    {
+        return static::code();
     }
 
     public static function holiday(): HolidayProviderInterface
