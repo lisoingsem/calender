@@ -46,9 +46,10 @@ final class CalendarDateFormatter
                 'dddd' => fn () => $this->formatDayOfWeek('full'),
                 'ddd' => fn () => $this->formatDayOfWeek('short'),
                 'dd' => fn () => $this->formatDayOfWeek('min'),
-                'DDD' => fn () => $this->formatDayOfYear(),
                 'DDDD' => fn () => $this->formatDayOfYear(true),
                 'DDDo' => fn () => $this->formatDayOfYear(false, true),
+                'DDD' => fn () => $this->formatDayOfYear(),
+                'DD' => fn () => $this->formatDay(true), // Zero-padded day
                 'MMMM' => fn () => $this->formatMonth('full'),
                 'MMM' => fn () => $this->formatMonth('short'),
                 'MM' => fn () => $this->formatMonth('numeric', true),
@@ -97,9 +98,15 @@ final class CalendarDateFormatter
         return $result;
     }
 
-    private function formatDay(): string
+    private function formatDay(bool $padded = false): string
     {
-        return (string) $this->date->getDay();
+        $day = $this->date->getDay();
+        
+        if ($padded) {
+            return str_pad((string) $day, 2, '0', STR_PAD_LEFT);
+        }
+        
+        return (string) $day;
     }
 
     private function formatDayAlternative(): string
