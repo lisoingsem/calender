@@ -259,6 +259,21 @@ final class CalendarDate
             return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::toString($this, $locale);
         }
 
+        // For gregorian calendar, use a full readable format
+        if ($this->calendar === 'gregorian') {
+            // Convert to Carbon to get day of week and month name
+            $carbon = \Lisoing\Calendar\Facades\Calendar::toDateTime($this);
+            
+            // Use Carbon's locale-aware formatting
+            // If locale is provided, use it; otherwise use app's current locale
+            $carbonLocale = $locale ?? \Illuminate\Support\Facades\App::getLocale();
+            if ($carbonLocale !== null && $carbonLocale !== '') {
+                $carbon = $carbon->locale($carbonLocale);
+            }
+            
+            return $carbon->isoFormat('dddd, MMMM D, YYYY');
+        }
+
         // Default: use Carbon-style format
         return $this->format('YYYY-MM-DD', $locale);
     }
