@@ -24,11 +24,14 @@ composer require lisoing/calendar
 use Lisoing\Holidays\Holidays;
 use Lisoing\Countries\Cambodia;
 
-// Array of holiday name/date pairs (CarbonImmutable)
+// Using country helper with holiday() method
 $holidays = Holidays::for(Cambodia::holiday(), year: 2025, locale: 'en')->get();
 
-// or by country code
-$kh2024 = Holidays::for(country: 'KH', year: 2024)->get();
+// Using country helper instance
+$holidays = Holidays::for(Cambodia::make(), year: 2025, locale: 'en')->get();
+
+// Or by country code string
+$holidays = Holidays::for('KH', year: 2025, locale: 'en')->get();
 ```
 
 Translations are resolved from `resources/lang/cambodia/{locale}/holidays.php`, mirroring the structure used by Spatie's package and enabling contributors to add locales with a single file.

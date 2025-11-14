@@ -35,6 +35,11 @@ abstract class Country
         return static::CALENDAR ?? static::code();
     }
 
+    public static function holiday(): HolidayProviderInterface
+    {
+        return static::make()->provider();
+    }
+
     public static function register(): void
     {
         Registry::register(static::code(), static::class);
