@@ -44,18 +44,21 @@ final class CambodiaDateFormatter
     public static function getDayOfWeek(CalendarDate $date, ?string $locale = null): string
     {
         $weekdaySlug = $date->getContextValue('weekday_slug');
-        if ($weekdaySlug === null) {
+        if ($weekdaySlug === null || $weekdaySlug === '') {
             return '';
         }
 
         $locale = $locale ?? 'km';
-        $labels = Lang::get("cambodia::lunisolar.weekdays", [], $locale);
+        $key = "cambodia::lunisolar.weekdays";
+        $labels = Lang::get($key, [], $locale);
 
-        if (is_array($labels) && isset($labels[$weekdaySlug])) {
-            return $labels[$weekdaySlug];
+        // Check if translation was found (not the key itself)
+        if (is_array($labels) && $labels !== [] && isset($labels[$weekdaySlug])) {
+            return (string) $labels[$weekdaySlug];
         }
 
-        return $weekdaySlug;
+        // Fallback: return slug if translation not found
+        return (string) $weekdaySlug;
     }
 
     /**
@@ -64,18 +67,21 @@ final class CambodiaDateFormatter
     public static function getLunarMonth(CalendarDate $date, ?string $locale = null): string
     {
         $monthSlug = $date->getContextValue('month_slug');
-        if ($monthSlug === null) {
+        if ($monthSlug === null || $monthSlug === '') {
             return '';
         }
 
         $locale = $locale ?? 'km';
-        $labels = Lang::get("cambodia::lunisolar.lunar_months", [], $locale);
+        $key = "cambodia::lunisolar.lunar_months";
+        $labels = Lang::get($key, [], $locale);
 
-        if (is_array($labels) && isset($labels[$monthSlug])) {
-            return $labels[$monthSlug];
+        // Check if translation was found (not the key itself)
+        if (is_array($labels) && $labels !== [] && isset($labels[$monthSlug])) {
+            return (string) $labels[$monthSlug];
         }
 
-        return $monthSlug;
+        // Fallback: return slug if translation not found
+        return (string) $monthSlug;
     }
 
     /**
@@ -97,18 +103,21 @@ final class CambodiaDateFormatter
     public static function getAnimalYear(CalendarDate $date, ?string $locale = null): string
     {
         $animalYearSlug = $date->getContextValue('animal_year_slug');
-        if ($animalYearSlug === null) {
+        if ($animalYearSlug === null || $animalYearSlug === '') {
             return '';
         }
 
         $locale = $locale ?? 'km';
-        $labels = Lang::get("cambodia::lunisolar.animal_years", [], $locale);
+        $key = "cambodia::lunisolar.animal_years";
+        $labels = Lang::get($key, [], $locale);
 
-        if (is_array($labels) && isset($labels[$animalYearSlug])) {
-            return $labels[$animalYearSlug];
+        // Check if translation was found (not the key itself)
+        if (is_array($labels) && $labels !== [] && isset($labels[$animalYearSlug])) {
+            return (string) $labels[$animalYearSlug];
         }
 
-        return $animalYearSlug;
+        // Fallback: return slug if translation not found
+        return (string) $animalYearSlug;
     }
 
     /**
@@ -117,18 +126,21 @@ final class CambodiaDateFormatter
     public static function getEraYear(CalendarDate $date, ?string $locale = null): string
     {
         $eraYearSlug = $date->getContextValue('era_year_slug');
-        if ($eraYearSlug === null) {
+        if ($eraYearSlug === null || $eraYearSlug === '') {
             return '';
         }
 
         $locale = $locale ?? 'km';
-        $labels = Lang::get("cambodia::lunisolar.era_years", [], $locale);
+        $key = "cambodia::lunisolar.era_years";
+        $labels = Lang::get($key, [], $locale);
 
-        if (is_array($labels) && isset($labels[$eraYearSlug])) {
-            return $labels[$eraYearSlug];
+        // Check if translation was found (not the key itself)
+        if (is_array($labels) && $labels !== [] && isset($labels[$eraYearSlug])) {
+            return (string) $labels[$eraYearSlug];
         }
 
-        return $eraYearSlug;
+        // Fallback: return slug if translation not found
+        return (string) $eraYearSlug;
     }
 
     /**

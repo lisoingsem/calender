@@ -156,7 +156,39 @@ final class CalendarServiceProvider extends ServiceProvider
         $this->registerToolkit();
     }
 
-    public function boot(): void {}
+    public function boot(): void
+    {
+        // Auto-discover and load translation files for each country
+        // Each country directory in resources/lang/ gets registered as its own namespace
+        $this->loadCountryTranslations();
+    }
+
+    /**
+     * Auto-discover and load translation files for each country.
+     * Scans resources/lang/ for country directories and registers them.
+     */
+    private function loadCountryTranslations(): void
+    {
+        $translationsPath = dirname(__DIR__).'/resources/lang';
+
+        if (! is_dir($translationsPath)) {
+            return;
+        }
+
+        // Scan for country directories (e.g., cambodia/, nepal/, etc.)
+        foreach (glob($translationsPath.'/*', GLOB_ONLYDIR) as $countryPath) {
+            $countryName = basename($countryPath);
+
+            // Skip if not a valid directory name
+            if ($countryName === '' || $countryName === '.' || $countryName === '..') {
+                continue;
+            }
+
+            // Register this country's translations as a namespace
+            // e.g., resources/lang/cambodia/ -> 'cambodia' namespace
+            $this->loadTranslationsFrom($countryPath, $countryName);
+        }
+    }
 
     private function registerHolidayManager(): void
     {
