@@ -22,6 +22,8 @@ final class CalendarContext
 
     public function fromCarbon(CarbonInterface $dateTime): CalendarDate
     {
+        // Ensure the date uses the appropriate timezone
+        // The calendar's fromDateTime will handle timezone conversion
         return $this->manager->fromDateTime($dateTime, $this->targetIdentifier);
     }
 

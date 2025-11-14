@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Facade;
 use Lisoing\Calendar\CalendarManager;
 
 /**
- * @method static string getDefaultCalendar()
+ * @method static string|null getDefaultCalendar()
  * @method static \Lisoing\Calendar\Support\CalendarContext for(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\Support\CalendarContext using(string|\Lisoing\Calendar\Contracts\CalendarInterface $calendar)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate convert(\Lisoing\Calendar\ValueObjects\CalendarDate $date, string $targetIdentifier)

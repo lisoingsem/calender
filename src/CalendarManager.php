@@ -24,8 +24,8 @@ final class CalendarManager
     private array $aliases = [];
 
     public function __construct(
-        private readonly string $defaultCalendar,
-        private readonly string $fallbackLocale
+        private readonly ?string $defaultCalendar = null,
+        private readonly string $fallbackLocale = 'en'
     ) {
         /** @var Collection<string, CalendarInterface> $calendars */
         $calendars = collect();
@@ -33,7 +33,7 @@ final class CalendarManager
         $this->calendars = $calendars;
     }
 
-    public function getDefaultCalendar(): string
+    public function getDefaultCalendar(): ?string
     {
         return $this->defaultCalendar;
     }
@@ -90,6 +90,13 @@ final class CalendarManager
 
     public function fromDateTime(CarbonInterface $dateTime, ?string $calendarIdentifier = null): CalendarDate
     {
+        if ($calendarIdentifier === null && $this->defaultCalendar === null) {
+            throw new \RuntimeException(
+                'No calendar identifier provided and no default calendar is set. ' .
+                'Please specify a calendar: Calendar::for("km")->fromCarbon($date) or set a default calendar in config.'
+            );
+        }
+
         $identifier = $calendarIdentifier ?? $this->defaultCalendar;
 
         $calendar = $this->calendar($identifier);

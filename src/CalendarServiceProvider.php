@@ -32,21 +32,28 @@ final class CalendarServiceProvider extends ServiceProvider
             $configRepository = $container->make('config');
             $config = $configRepository->get('calendar', []);
 
-            $defaultCalendar = Arr::get($config, 'default_calendar', 'gregorian');
+            // Default calendar is optional - use from config or null
+            $defaultCalendar = Arr::get($config, 'default_calendar');
+            $defaultCalendar = is_string($defaultCalendar) && $defaultCalendar !== '' ? $defaultCalendar : null;
 
+            // Fallback locale from Laravel app config
             $fallbackLocale = Arr::get($config, 'fallback_locale');
             if (! is_string($fallbackLocale) || $fallbackLocale === '') {
                 $fallbackLocale = (string) $configRepository->get('app.fallback_locale', $configRepository->get('app.locale', 'en'));
             }
 
             $manager = new CalendarManager(
-                defaultCalendar: (string) $defaultCalendar,
+                defaultCalendar: $defaultCalendar,
                 fallbackLocale: $fallbackLocale
             );
 
             // Always register gregorian calendar
             $gregorianCalendar = self::resolveCalendar($container, GregorianCalendar::class);
-            $gregorianSettings = Arr::get($config, 'calendar_settings.gregorian', ['timezone' => 'UTC']);
+            
+            // Use Laravel's app timezone if not configured
+            $appTimezone = (string) $configRepository->get('app.timezone', 'UTC');
+            $gregorianSettings = Arr::get($config, 'calendar_settings.gregorian', ['timezone' => $appTimezone]);
+            
             if ($gregorianCalendar instanceof ConfigurableCalendarInterface) {
                 $gregorianCalendar->configure($gregorianSettings);
             }
@@ -68,7 +75,16 @@ final class CalendarServiceProvider extends ServiceProvider
                     $identifier = $calendar->identifier();
 
                     if ($calendar instanceof ConfigurableCalendarInterface) {
-                        $calendar->configure($settings[$identifier] ?? []);
+                        // Use Laravel's app timezone if not configured for this calendar
+                        $appTimezone = (string) $configRepository->get('app.timezone', 'UTC');
+                        $calendarSettings = $settings[$identifier] ?? [];
+                        
+                        // Set timezone from config or use app timezone
+                        if (! isset($calendarSettings['timezone'])) {
+                            $calendarSettings['timezone'] = $appTimezone;
+                        }
+                        
+                        $calendar->configure($calendarSettings);
                     }
 
                     $manager->register($calendar);
