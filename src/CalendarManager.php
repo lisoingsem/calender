@@ -135,4 +135,50 @@ final class CalendarManager
 
         return new CalendarContext($this, $identifier);
     }
+
+    /**
+     * Parse a date string into a calendar date (Carbon-like API).
+     *
+     * @param  string  $date  Date string (e.g., '2025-04-14', '2025-04-14 10:30')
+     * @param  string|null  $calendar  Calendar identifier (defaults to default calendar)
+     * @param  string|null  $timezone  Timezone (defaults to calendar's timezone)
+     * @return CalendarDate
+     */
+    public function parse(string $date, ?string $calendar = null, ?string $timezone = null): CalendarDate
+    {
+        $carbon = \Carbon\CarbonImmutable::parse($date, $timezone);
+
+        return $this->fromDateTime($carbon, $calendar);
+    }
+
+    /**
+     * Get current date in calendar (Carbon-like API).
+     *
+     * @param  string|null  $calendar  Calendar identifier (defaults to default calendar)
+     * @param  string|null  $timezone  Timezone (defaults to calendar's timezone)
+     * @return CalendarDate
+     */
+    public function now(?string $calendar = null, ?string $timezone = null): CalendarDate
+    {
+        $carbon = \Carbon\CarbonImmutable::now($timezone);
+
+        return $this->fromDateTime($carbon, $calendar);
+    }
+
+    /**
+     * Create a calendar date from year, month, day (Carbon-like API).
+     *
+     * @param  int  $year  Year
+     * @param  int  $month  Month (1-12 or 1-14 for lunisolar)
+     * @param  int  $day  Day (1-31)
+     * @param  string|null  $calendar  Calendar identifier
+     * @param  string|null  $timezone  Timezone
+     * @return CalendarDate
+     */
+    public function create(int $year, int $month, int $day, ?string $calendar = null, ?string $timezone = null): CalendarDate
+    {
+        $carbon = \Carbon\CarbonImmutable::create($year, $month, $day, 0, 0, 0, $timezone);
+
+        return $this->fromDateTime($carbon, $calendar);
+    }
 }

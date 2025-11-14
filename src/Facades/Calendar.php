@@ -16,6 +16,9 @@ use Lisoing\Calendar\CalendarManager;
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate fromDateTime(\Carbon\CarbonInterface $dateTime, ?string $calendarIdentifier = null)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate toLunar(\Carbon\CarbonInterface $dateTime, ?string $calendarIdentifier = null)
  * @method static \Carbon\CarbonInterface toSolar(\Lisoing\Calendar\ValueObjects\CalendarDate $date, string $targetIdentifier = 'gregorian')
+ * @method static \Lisoing\Calendar\ValueObjects\CalendarDate parse(string $date, ?string $calendar = null, ?string $timezone = null)
+ * @method static \Lisoing\Calendar\ValueObjects\CalendarDate now(?string $calendar = null, ?string $timezone = null)
+ * @method static \Lisoing\Calendar\ValueObjects\CalendarDate create(int $year, int $month, int $day, ?string $calendar = null, ?string $timezone = null)
  */
 final class Calendar extends Facade
 {

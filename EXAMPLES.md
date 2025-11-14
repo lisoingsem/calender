@@ -2,16 +2,31 @@
 
 ## Common Use Cases
 
-### 1. Convert Gregorian (Solar) to Khmer Lunar - SIMPLEST WAY
+### 1. Convert Gregorian (Solar) to Khmer Lunar - CARBON-LIKE API
 
 ```php
-use Carbon\CarbonImmutable;
 use Lisoing\Calendar;
+use Lisoing\Countries\Cambodia;
 
-$gregorian = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
+// Method 1: Parse date string (Carbon-like)
+$lunar = Calendar::parse('2025-04-14', 'km');
 
-// Convert to lunar - ONE LINE!
-$lunar = Calendar::toLunar($gregorian, 'km');
+// Method 2: Get current date (Carbon-like)
+$lunar = Calendar::now('km');
+
+// Method 3: Create from year/month/day (Carbon-like)
+$lunar = Calendar::create(2025, 4, 14, 'km');
+
+// Method 4: Using for() method
+$lunar = Calendar::for(Cambodia::calendar())->fromCarbon(
+    CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh')
+);
+
+// Method 5: Direct conversion
+$lunar = Calendar::toLunar(
+    CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh'),
+    'km'
+);
 
 // Get formatted day like chhankitek (១កើត, ១៤រោច)
 echo $lunar->formatDay();        // '១៥កើត' (15 Keit)
@@ -42,6 +57,20 @@ echo $lunar->format('dddd L MMMM YYYY');  // 'ច័ន្ទ ១៥កើត �
 // Full formatted string (like chhankitek)
 echo $lunar->toString();         // 'ថ្ងៃច័ន្ទ ១៥កើត ខែចេត្រ...'
 echo (string) $lunar;            // Same as toString()
+
+// Date manipulation (Carbon-like)
+$tomorrow = $lunar->addDays(1);   // Add 1 day
+$nextMonth = $lunar->addMonths(1); // Add 1 month
+$nextYear = $lunar->addYears(1);   // Add 1 year
+$yesterday = $lunar->subDays(1);   // Subtract 1 day
+
+// Date checks (Carbon-like)
+$lunar->isToday();    // Check if today
+$lunar->isPast();     // Check if in past
+$lunar->isFuture();   // Check if in future
+
+// Convert to Carbon (Carbon-like)
+$carbon = $lunar->toCarbon(); // Get Carbon instance
 ```
 
 ### 2. Convert Lunar back to Gregorian (Solar)
@@ -241,11 +270,36 @@ public function getLunarDateSimple(string $date): array
 
 ## Quick Reference
 
+### Carbon-like Static Methods
+
+| Method | Example | Result |
+|--------|---------|--------|
+| `parse()` | `Calendar::parse('2025-04-14', 'km')` | Parse date string |
+| `now()` | `Calendar::now('km')` | Current date |
+| `create()` | `Calendar::create(2025, 4, 14, 'km')` | Create from Y/M/D |
+| `toLunar()` | `Calendar::toLunar($carbon, 'km')` | Convert Carbon to lunar |
+| `toSolar()` | `Calendar::toSolar($lunar, 'gregorian')` | Convert lunar to Carbon |
+
+### CalendarDate Methods (Carbon-like)
+
+| Method | Example | Result |
+|--------|---------|--------|
+| `format()` | `$lunar->format('dddd D')` | Format date |
+| `addDays()` | `$lunar->addDays(5)` | Add days |
+| `subDays()` | `$lunar->subDays(5)` | Subtract days |
+| `addMonths()` | `$lunar->addMonths(1)` | Add months |
+| `addYears()` | `$lunar->addYears(1)` | Add years |
+| `toCarbon()` | `$lunar->toCarbon()` | Get Carbon instance |
+| `isToday()` | `$lunar->isToday()` | Check if today |
+| `isPast()` | `$lunar->isPast()` | Check if past |
+| `isFuture()` | `$lunar->isFuture()` | Check if future |
+
+### Conversion Table
+
 | What you have | What you want | How to do it |
 |---------------|---------------|--------------|
-| Carbon (Gregorian) | Lunar (CalendarDate) | `Calendar::toLunar($carbon, 'km')` |
-| Lunar (CalendarDate) | Carbon (Gregorian) | `Calendar::toSolar($lunar, 'gregorian')` |
-| Carbon | Lunar info | `Calendar::toLunar($carbon, 'km')->getContext()` |
-| Lunar | Carbon | `Calendar::for('gregorian')->toCarbon($lunar)` |
+| Date string | Lunar | `Calendar::parse('2025-04-14', 'km')` |
+| Carbon (Gregorian) | Lunar | `Calendar::toLunar($carbon, 'km')` |
+| Lunar (CalendarDate) | Carbon | `$lunar->toCarbon()` or `Calendar::toSolar($lunar, 'gregorian')` |
 | Lunar | Array (for API) | `$lunar->toArray()` |
 

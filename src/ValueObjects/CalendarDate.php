@@ -283,6 +283,136 @@ final class CalendarDate
         return $this->toString();
     }
 
+    /**
+     * Add days to the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $days  Number of days to add
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function addDays(int $days): CalendarDate
+    {
+        $carbon = \Lisoing\Calendar\Facades\Calendar::toDateTime($this);
+        $newCarbon = $carbon->addDays($days);
+
+        return \Lisoing\Calendar\Facades\Calendar::fromDateTime($newCarbon, $this->calendar);
+    }
+
+    /**
+     * Subtract days from the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $days  Number of days to subtract
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function subDays(int $days): CalendarDate
+    {
+        return $this->addDays(-$days);
+    }
+
+    /**
+     * Add months to the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $months  Number of months to add
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function addMonths(int $months): CalendarDate
+    {
+        $carbon = \Lisoing\Calendar\Facades\Calendar::toDateTime($this);
+        $newCarbon = $carbon->addMonths($months);
+
+        return \Lisoing\Calendar\Facades\Calendar::fromDateTime($newCarbon, $this->calendar);
+    }
+
+    /**
+     * Subtract months from the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $months  Number of months to subtract
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function subMonths(int $months): CalendarDate
+    {
+        return $this->addMonths(-$months);
+    }
+
+    /**
+     * Add years to the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $years  Number of years to add
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function addYears(int $years): CalendarDate
+    {
+        $carbon = \Lisoing\Calendar\Facades\Calendar::toDateTime($this);
+        $newCarbon = $carbon->addYears($years);
+
+        return \Lisoing\Calendar\Facades\Calendar::fromDateTime($newCarbon, $this->calendar);
+    }
+
+    /**
+     * Subtract years from the date (Carbon-like API).
+     * Returns a new CalendarDate instance.
+     *
+     * @param  int  $years  Number of years to subtract
+     * @return CalendarDate New CalendarDate instance
+     */
+    public function subYears(int $years): CalendarDate
+    {
+        return $this->addYears(-$years);
+    }
+
+    /**
+     * Convert to Carbon instance (Carbon-like API).
+     *
+     * @return CarbonInterface Carbon instance
+     */
+    public function toCarbon(): CarbonInterface
+    {
+        return \Lisoing\Calendar\Facades\Calendar::toDateTime($this);
+    }
+
+    /**
+     * Check if date is today (Carbon-like API).
+     *
+     * @return bool
+     */
+    public function isToday(): bool
+    {
+        $carbon = $this->toCarbon();
+        $today = \Carbon\CarbonImmutable::now($carbon->timezone);
+
+        return $carbon->isSameDay($today);
+    }
+
+    /**
+     * Check if date is in the past (Carbon-like API).
+     *
+     * @return bool
+     */
+    public function isPast(): bool
+    {
+        $carbon = $this->toCarbon();
+        $now = \Carbon\CarbonImmutable::now($carbon->timezone);
+
+        return $carbon->isPast();
+    }
+
+    /**
+     * Check if date is in the future (Carbon-like API).
+     *
+     * @return bool
+     */
+    public function isFuture(): bool
+    {
+        $carbon = $this->toCarbon();
+        $now = \Carbon\CarbonImmutable::now($carbon->timezone);
+
+        return $carbon->isFuture();
+    }
+
     private function assertValid(): void
     {
         if ($this->month < 1 || $this->month > 14) {

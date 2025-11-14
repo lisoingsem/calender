@@ -16,6 +16,35 @@ Universal lunar and solar calendar package for Laravel and PHP, maintained by a 
 composer require lisoing/calendar
 ```
 
+## Creating New Lunisolar Calendars
+
+Want to add support for your country's lunisolar calendar? We've made it easy!
+
+### Quick Start
+
+1. **Extend `AbstractLunisolarCalendar`** - Handles all the boilerplate
+2. **Create a calculator class** - Just implement `toLunar()` and `toSolar()`
+3. **Register your calendar** - Add it to your Country class
+
+### Documentation
+
+- 📖 **[Complete Guide](docs/CREATING_LUNISOLAR_CALENDAR.md)** - Step-by-step instructions
+- 📝 **[Calendar Template](docs/templates/LunisolarCalendarTemplate.php)** - Copy and modify
+- 📝 **[Calculator Template](docs/templates/CalculatorTemplate.php)** - Calculator template
+
+### Example
+
+```php
+// Just extend AbstractLunisolarCalendar and implement a few methods
+final class NepalCalendar extends AbstractLunisolarCalendar
+{
+    // Implement 8 simple methods - that's it!
+    // The abstract class handles all the complex date conversion logic
+}
+```
+
+See `CambodiaCalendar.php` for a complete working example.
+
 ## Quick Start
 
 ### Holiday lookups (Spatie-style)

@@ -8,24 +8,31 @@ composer require lisoing/calendar
 
 ## Basic Calendar Conversions
 
-### Convert Solar (Gregorian) to Lunar (Khmer)
+### Convert Solar (Gregorian) to Lunar (Khmer) - Carbon-like API
 
 ```php
-use Carbon\CarbonImmutable;
 use Lisoing\Calendar;
 use Lisoing\Countries\Cambodia;
 
-// Convert a Gregorian date to Khmer lunar calendar
-$solarDate = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
+// Method 1: Parse date string (Carbon-like) - SIMPLEST!
+$lunar = Calendar::parse('2025-04-14', 'km');
 
-// Method 1: Using Calendar::toLunar() - SIMPLEST WAY
-$lunar = Calendar::toLunar($solarDate, 'km');
+// Method 2: Get current date (Carbon-like)
+$lunar = Calendar::now('km');
 
-// Method 2: Using calendar identifier 'km'
-$lunar = Calendar::for('km')->fromCarbon($solarDate);
+// Method 3: Create from year/month/day (Carbon-like)
+$lunar = Calendar::create(2025, 4, 14, 'km');
 
-// Method 3: Using country helper
-$lunar = Calendar::for(Cambodia::calendar())->fromCarbon($solarDate);
+// Method 4: Using Calendar::toLunar() with Carbon
+$lunar = Calendar::toLunar(
+    CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh'),
+    'km'
+);
+
+// Method 5: Using for() method
+$lunar = Calendar::for(Cambodia::calendar())->fromCarbon(
+    CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh')
+);
 
 // Access lunar date information
 echo $lunar->getYear();        // 2025
