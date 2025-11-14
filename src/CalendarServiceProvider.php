@@ -59,6 +59,15 @@ final class CalendarServiceProvider extends ServiceProvider
             }
             $manager->register($gregorianCalendar);
 
+            // Register Islamic calendar (global lunar calendar)
+            $islamicCalendar = self::resolveCalendar($container, \Lisoing\Calendar\Calendars\IslamicCalendar::class);
+            $islamicSettings = Arr::get($config, 'calendar_settings.islamic', ['timezone' => 'UTC']);
+            
+            if ($islamicCalendar instanceof ConfigurableCalendarInterface) {
+                $islamicCalendar->configure($islamicSettings);
+            }
+            $manager->register($islamicCalendar);
+
             // Auto-discover and register country classes
             $this->discoverCountries();
 

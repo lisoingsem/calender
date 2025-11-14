@@ -13,6 +13,7 @@ use Lisoing\Calendar\Exceptions\CalendarNotFoundException;
 use Lisoing\Calendar\Support\CalendarContext;
 use Lisoing\Calendar\Support\LocaleResolver;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
+use Lisoing\Countries\Country;
 
 final class CalendarManager
 {
@@ -76,6 +77,48 @@ final class CalendarManager
         $this->aliases[strtoupper($alias)] = $calendarIdentifier;
     }
 
+    /**
+     * Check if a calendar is a lunar calendar (purely moon-based).
+     */
+    public function isLunar(string $identifier): bool
+    {
+        $calendar = $this->calendars->get($identifier);
+        
+        if ($calendar === null) {
+            return false;
+        }
+
+        return $calendar instanceof \Lisoing\Calendar\Contracts\LunarCalendarInterface;
+    }
+
+    /**
+     * Check if a calendar is a lunisolar calendar (moon + sun with leap months).
+     */
+    public function isLunisolar(string $identifier): bool
+    {
+        $calendar = $this->calendars->get($identifier);
+        
+        if ($calendar === null) {
+            return false;
+        }
+
+        return $calendar instanceof \Lisoing\Calendar\Contracts\LunisolarCalendarInterface;
+    }
+
+    /**
+     * Check if a calendar is a solar calendar (purely sun-based).
+     */
+    public function isSolar(string $identifier): bool
+    {
+        $calendar = $this->calendars->get($identifier);
+        
+        if ($calendar === null) {
+            return false;
+        }
+
+        return $calendar instanceof \Lisoing\Calendar\Contracts\SolarCalendarInterface;
+    }
+
     public function calendar(string $identifier): CalendarInterface
     {
         $identifier = $this->aliases[strtoupper($identifier)] ?? $identifier;
@@ -135,7 +178,7 @@ final class CalendarManager
     }
 
     /**
-     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface  $calendar
+     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface|class-string<Country>  $calendar
      */
     public function for(string|CalendarInterface $calendar): CalendarContext
     {
@@ -143,10 +186,17 @@ final class CalendarManager
     }
 
     /**
-     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface  $calendar
+     * @param  string|\Lisoing\Calendar\Contracts\CalendarInterface|class-string<Country>  $calendar
      */
     public function using(string|CalendarInterface $calendar): CalendarContext
     {
+        // Handle Country class strings - default to gregorian
+        if (is_string($calendar) && class_exists($calendar) && is_subclass_of($calendar, Country::class)) {
+            // Default to gregorian for Country classes
+            // The country's lunisolar calendar can be accessed via ->toLunar()
+            return new CalendarContext($this, 'gregorian', $calendar);
+        }
+
         $identifier = $calendar instanceof CalendarInterface
             ? $calendar->identifier()
             : (string) $calendar;

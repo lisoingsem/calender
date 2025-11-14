@@ -238,7 +238,7 @@ final class CalendarDateFormatter
     {
         // Use calendar-specific formatter if available
         if ($this->date->getCalendar() === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::formatAlternativeNumber($number, $this->locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::formatAlternativeNumber($number, $this->locale);
         }
 
         // Default: return regular number

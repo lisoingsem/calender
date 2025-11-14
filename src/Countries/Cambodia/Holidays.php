@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Holidays\Countries;
+namespace Lisoing\Calendar\Countries\Cambodia;
 
 use Lisoing\Calendar\Holidays\AbstractHolidayProvider;
-use Lisoing\Calendar\Support\Khmer\LunisolarCalculator;
+use Lisoing\Calendar\Support\Cambodia\LunisolarCalculator;
 
-final class Cambodia extends AbstractHolidayProvider
+final class Holidays extends AbstractHolidayProvider
 {
     private readonly LunisolarCalculator $calculator;
 
@@ -67,7 +67,8 @@ final class Cambodia extends AbstractHolidayProvider
             'slug' => $entry['slug'],
             'date' => $date,
             'type' => (string) ($entry['type'] ?? 'public'),
-            'name_key' => $entry['name_key'] ?? $entry['slug'],
+            'title' => $entry['title'] ?? $entry['slug'],
+            'description' => $entry['description'] ?? null,
         ];
     }
 
@@ -98,7 +99,8 @@ final class Cambodia extends AbstractHolidayProvider
             'slug' => $entry['slug'],
             'date' => $override,
             'type' => (string) ($entry['type'] ?? 'public'),
-            'name_key' => $entry['name_key'] ?? $entry['slug'],
+            'title' => $entry['title'] ?? $entry['slug'],
+            'description' => $entry['description'] ?? null,
         ];
     }
 

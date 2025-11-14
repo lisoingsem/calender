@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Support\Khmer;
+namespace Lisoing\Calendar\Support\Cambodia;
 
 use Illuminate\Support\Facades\Lang;
 use Lisoing\Calendar\Facades\Calendar;
@@ -176,8 +176,10 @@ final class CambodiaDateFormatter
 
     /**
      * Get full formatted string like chhankitek.
+     * 
+     * @param  bool  $includeStructureWords  Whether to include Khmer structure words (ថ្ងៃ, ខែ, ឆ្នាំ)
      */
-    public static function toString(CalendarDate $date, ?string $locale = null): string
+    public static function toString(CalendarDate $date, ?string $locale = null, bool $includeStructureWords = true): string
     {
         $locale = self::resolveLocale($locale);
         $dayOfWeek = self::getDayOfWeek($date, $locale);
@@ -187,7 +189,17 @@ final class CambodiaDateFormatter
         $eraYear = self::getEraYear($date, $locale);
         $lunarYear = self::getLunarYear($date, $locale);
 
-        return "ថ្ងៃ{$dayOfWeek} {$lunarDay} ខែ{$lunarMonth} ឆ្នាំ{$animalYear} {$eraYear} ពុទ្ធសករាជ {$lunarYear}";
+        $isKhmerLocale = $locale === 'km' || str_starts_with($locale, 'km_');
+
+        // For Khmer locale with structure words
+        if ($isKhmerLocale && $includeStructureWords) {
+            return "ថ្ងៃ{$dayOfWeek} {$lunarDay} ខែ{$lunarMonth} ឆ្នាំ{$animalYear} {$eraYear} ពុទ្ធសករាជ {$lunarYear}";
+        }
+
+        // For Khmer locale without structure words, or English/other locales
+        // Format: "សុក្រ ៩រោច អស្សុជ ម្សាញ់ សប្តស័ក ពុទ្ធសករាជ ២៥៦៩"
+        // Or: "Friday 9Waning Moon (Roaj) Assuj Snake Sapta Sak ពុទ្ធសករាជ 2569"
+        return "{$dayOfWeek} {$lunarDay} {$lunarMonth} {$animalYear} {$eraYear} ពុទ្ធសករាជ {$lunarYear}";
     }
 
     /**

@@ -106,7 +106,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::formatDay($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::formatDay($this, $locale);
         }
 
         // Default: return day number
@@ -123,7 +123,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getDayOfWeek($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getDayOfWeek($this, $locale);
         }
 
         // Default: return weekday slug or empty
@@ -151,7 +151,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getLunarMonth($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getLunarMonth($this, $locale);
         }
 
         // Default: return month slug or empty
@@ -168,7 +168,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getLunarYear($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getLunarYear($this, $locale);
         }
 
         // Default: return year or Buddhist Era year from context
@@ -186,7 +186,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getAnimalYear($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getAnimalYear($this, $locale);
         }
 
         // Default: return animal year slug or empty
@@ -203,7 +203,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getEraYear($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getEraYear($this, $locale);
         }
 
         // Default: return era year slug or empty
@@ -220,7 +220,7 @@ final class CalendarDate
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::getPhase($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::getPhase($this, $locale);
         }
 
         // Default: return phase slug
@@ -250,13 +250,14 @@ final class CalendarDate
      * Get full formatted string (reusable, calendar-specific formatters handle details).
      *
      * @param  string|null  $locale  Locale for formatting
+     * @param  bool  $includeStructureWords  Whether to include structure words (for Khmer: ថ្ងៃ, ខែ, ឆ្នាំ)
      * @return string Full formatted date string
      */
-    public function toString(?string $locale = null): string
+    public function toString(?string $locale = null, bool $includeStructureWords = true): string
     {
         // Use calendar-specific formatter if available
         if ($this->calendar === 'km') {
-            return \Lisoing\Calendar\Support\Khmer\CambodiaDateFormatter::toString($this, $locale);
+            return \Lisoing\Calendar\Support\Cambodia\CambodiaDateFormatter::toString($this, $locale, $includeStructureWords);
         }
 
         // For gregorian calendar, use a full readable format

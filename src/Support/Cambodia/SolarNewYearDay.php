@@ -2,15 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Support\Khmer;
+namespace Lisoing\Calendar\Support\Cambodia;
 
-final class SolarPhol
+final class SolarNewYearDay
 {
     public function __construct(
+        private readonly int $sotin,
         private readonly int $reasey,
         private readonly int $angsar,
         private readonly int $libda
     ) {
+    }
+
+    public function sotin(): int
+    {
+        return $this->sotin;
     }
 
     public function reasey(): int

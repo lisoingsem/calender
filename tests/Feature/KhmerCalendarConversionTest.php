@@ -37,7 +37,8 @@ final class KhmerCalendarConversionTest extends TestCase
     {
         // Test converting Khmer lunar date back to Gregorian
         $solarDate = CarbonImmutable::parse('2025-04-14 00:00:00', 'Asia/Phnom_Penh');
-        $lunar = Calendar::for('km')->fromCarbon($solarDate);
+        $lunarContext = Calendar::for('km')->fromCarbon($solarDate);
+        $lunar = $lunarContext->getDate();
 
         // Convert back to solar
         $convertedSolar = Calendar::for('gregorian')->fromCalendar($lunar);
@@ -53,7 +54,8 @@ final class KhmerCalendarConversionTest extends TestCase
         $originalSolar = CarbonImmutable::parse('2025-04-14 12:00:00', 'Asia/Phnom_Penh');
 
         // Convert to lunar
-        $lunar = Calendar::for('km')->fromCarbon($originalSolar);
+        $lunarContext = Calendar::for('km')->fromCarbon($originalSolar);
+        $lunar = $lunarContext->getDate();
 
         // Convert back to solar
         $convertedSolar = Calendar::for('gregorian')->fromCalendar($lunar);
@@ -85,7 +87,8 @@ final class KhmerCalendarConversionTest extends TestCase
         // Test with current date
         $now = CarbonImmutable::now('Asia/Phnom_Penh');
 
-        $lunar = Calendar::for('km')->fromCarbon($now);
+        $lunarContext = Calendar::for('km')->fromCarbon($now);
+        $lunar = $lunarContext->getDate();
         $solar = Calendar::for('gregorian')->fromCalendar($lunar);
         $carbonDate = Calendar::for('gregorian')->toCarbon($solar);
 
@@ -118,7 +121,8 @@ final class KhmerCalendarConversionTest extends TestCase
 
         foreach ($testDates as $dateString) {
             $solar = CarbonImmutable::parse($dateString, 'Asia/Phnom_Penh');
-            $lunar = Calendar::for('km')->fromCarbon($solar);
+            $lunarContext = Calendar::for('km')->fromCarbon($solar);
+            $lunar = $lunarContext->getDate();
             $backToSolar = Calendar::for('gregorian')->fromCalendar($lunar);
             $carbonDate = Calendar::for('gregorian')->toCarbon($backToSolar);
 
@@ -129,7 +133,8 @@ final class KhmerCalendarConversionTest extends TestCase
     public function testLunarDateContext(): void
     {
         $date = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
-        $lunar = Calendar::for('km')->fromCarbon($date);
+        $lunarContext = Calendar::for('km')->fromCarbon($date);
+        $lunar = $lunarContext->getDate();
         $context = $lunar->getContext();
 
         // Verify all expected context keys are present

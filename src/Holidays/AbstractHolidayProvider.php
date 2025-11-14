@@ -91,6 +91,11 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
     {
         $base = ['type' => $definition['type'] ?? 'public'];
 
+        // Include description if available
+        if (isset($definition['description']) && is_string($definition['description']) && $definition['description'] !== '') {
+            $base['description'] = $definition['description'];
+        }
+
         $extras = $this->setting("observances.$slug.metadata", []);
 
         return array_merge($base, is_array($extras) ? $extras : []);
@@ -101,14 +106,14 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
      */
     protected function resolveNameKey(array $definition, string $slug): string
     {
-        $override = $this->setting("observances.$slug.name_key");
-
+        // Check for title (preferred field)
+        $override = $this->setting("observances.$slug.title");
         if (is_string($override) && $override !== '') {
             return $override;
         }
 
-        if (isset($definition['name_key']) && is_string($definition['name_key']) && $definition['name_key'] !== '') {
-            return $definition['name_key'];
+        if (isset($definition['title']) && is_string($definition['title']) && $definition['title'] !== '') {
+            return $definition['title'];
         }
 
         return $slug;

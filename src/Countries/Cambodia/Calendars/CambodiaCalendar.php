@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Calendars;
+namespace Lisoing\Calendar\Countries\Cambodia\Calendars;
 
 use Carbon\CarbonImmutable;
-use Lisoing\Calendar\Support\Khmer\LunisolarCalculator;
-use Lisoing\Calendar\Support\Khmer\LunisolarConstants;
-use Lisoing\Calendar\Support\Khmer\LunarDate;
+use Lisoing\Calendar\Calendars\AbstractLunisolarCalendar;
+use Lisoing\Calendar\Support\Cambodia\LunisolarCalculator;
+use Lisoing\Calendar\Support\Cambodia\LunisolarConstants;
+use Lisoing\Calendar\Support\Cambodia\LunarDate;
 use RuntimeException;
 
 /**

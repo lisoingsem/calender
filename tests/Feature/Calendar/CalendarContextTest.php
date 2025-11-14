@@ -24,7 +24,8 @@ final class CalendarContextTest extends TestCase
     public function testConvertBetweenCalendars(): void
     {
         $date = CarbonImmutable::parse('2025-04-14 00:00:00', 'Asia/Phnom_Penh');
-        $lunar = Calendar::for(Cambodia::calendar())->fromCarbon($date);
+        $lunarContext = Calendar::for(Cambodia::calendar())->fromCarbon($date);
+        $lunar = $lunarContext->getDate();
 
         $gregorian = Calendar::for('gregorian')->fromCalendar($lunar);
         $carbon = Calendar::for('gregorian')->toCarbon($gregorian);

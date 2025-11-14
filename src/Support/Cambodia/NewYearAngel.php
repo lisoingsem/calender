@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Support\Khmer;
+namespace Lisoing\Calendar\Support\Cambodia;
 
 /**
  * New Year Angel value object representing one of the seven angels

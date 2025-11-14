@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Support\Khmer;
+namespace Lisoing\Calendar\Support\Cambodia;
 
-final class LunarDay
+final class LunarDateLerngSak
 {
     public function __construct(
         private readonly int $day,
-        private readonly string $phaseKey
+        private readonly int $month
     ) {
     }
 
@@ -17,9 +17,9 @@ final class LunarDay
         return $this->day;
     }
 
-    public function phaseKey(): string
+    public function month(): int
     {
-        return $this->phaseKey;
+        return $this->month;
     }
 }
 

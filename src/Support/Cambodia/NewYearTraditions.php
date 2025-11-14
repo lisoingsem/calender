@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lisoing\Calendar\Support\Khmer;
+namespace Lisoing\Calendar\Support\Cambodia;
 
 /**
  * Khmer New Year traditions and cultural practices.

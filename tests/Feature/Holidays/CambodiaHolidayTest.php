@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Lisoing\Calendar\Tests\Feature\Holidays;
 
 use Lisoing\Calendar\Holidays\HolidayManager;
-use Lisoing\Calendar\Support\Khmer\LunisolarCalculator;
+use Lisoing\Calendar\Support\Cambodia\LunisolarCalculator;
 use Lisoing\Calendar\Tests\TestCase;
 
 final class CambodiaHolidayTest extends TestCase

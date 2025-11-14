@@ -190,6 +190,12 @@ $context = Calendar::for('km');
 $context->fromCarbon(CarbonInterface $dateTime)  // Convert Carbon to CalendarDate
 $context->fromCalendar(CalendarDate $date)      // Convert CalendarDate to CalendarDate
 $context->toCarbon(CalendarDate $date)         // Convert CalendarDate to Carbon
+$context->toLunisolar(?string $targetCalendar = null)  // Switch to lunisolar calendar
+$context->toIslamic(?string $targetCalendar = null)    // Switch to Islamic (lunar) calendar
+$context->toGregorian()                         // Switch to Gregorian (solar) calendar
+$context->toSolar(?string $targetCalendar = null)      // Switch to solar calendar
+$context->toString(?string $locale = null, bool $includeStructureWords = true)  // Format as string
+$context->format(string $format, ?string $locale = null)  // Format with pattern
 ```
 
 ## Returning CalendarDate from Controllers
@@ -268,6 +274,66 @@ public function getLunarDateSimple(string $date): array
 }
 ```
 
+## Three Calendar Types
+
+The package supports three distinct calendar types:
+
+### 1. Solar Calendar (Gregorian)
+- **Type**: Pure sun-based
+- **Year Length**: 365 or 366 days
+- **Example**: `'gregorian'`
+
+```php
+$gregorian = Calendar::for('gregorian')->fromCarbon(CarbonImmutable::now());
+Calendar::isSolar('gregorian'); // true
+```
+
+### 2. Lunisolar Calendar (Khmer, Chinese, etc.)
+- **Type**: Moon + Sun with leap months
+- **Year Length**: ~354-384 days (varies with leap months)
+- **Example**: `'km'` (Khmer), `'chinese'`
+
+```php
+use Lisoing\Countries\Cambodia;
+
+// Convert to lunisolar using country helper
+$lunisolar = Calendar::for(Cambodia::class)
+    ->fromCarbon(CarbonImmutable::now())
+    ->toLunisolar();
+
+Calendar::isLunisolar('km'); // true
+```
+
+### 3. Lunar Calendar (Islamic/Hijri)
+- **Type**: Pure moon-based
+- **Year Length**: ~354 days
+- **Example**: `'islamic'`
+
+```php
+// Convert to Islamic calendar
+$islamic = Calendar::for('gregorian')
+    ->fromCarbon(CarbonImmutable::now())
+    ->toIslamic();
+
+Calendar::isLunar('islamic'); // true
+```
+
+### Calendar Switching
+
+```php
+use Lisoing\Countries\Cambodia;
+
+$date = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
+
+// Chain calendar conversions
+$result = Calendar::for('gregorian')
+    ->fromCarbon($date)
+    ->toLunisolar('km')      // Switch to Khmer lunisolar
+    ->toGregorian()          // Switch back to Gregorian
+    ->toIslamic()            // Switch to Islamic lunar
+    ->toString();            // Format as string
+```
+
 ## Quick Reference
 
 ### Carbon-like Static Methods
@@ -277,8 +343,11 @@ public function getLunarDateSimple(string $date): array
 | `parse()` | `Calendar::parse('2025-04-14', 'km')` | Parse date string |
 | `now()` | `Calendar::now('km')` | Current date |
 | `create()` | `Calendar::create(2025, 4, 14, 'km')` | Create from Y/M/D |
-| `toLunar()` | `Calendar::toLunar($carbon, 'km')` | Convert Carbon to lunar |
+| `toLunar()` | `Calendar::toLunar($carbon, 'km')` | Convert Carbon to lunar (convenience method) |
 | `toSolar()` | `Calendar::toSolar($lunar, 'gregorian')` | Convert lunar to Carbon |
+| `isSolar()` | `Calendar::isSolar('gregorian')` | Check if calendar is solar |
+| `isLunisolar()` | `Calendar::isLunisolar('km')` | Check if calendar is lunisolar |
+| `isLunar()` | `Calendar::isLunar('islamic')` | Check if calendar is lunar |
 
 ### CalendarDate Methods (Carbon-like)
 

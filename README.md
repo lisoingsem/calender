@@ -4,7 +4,7 @@ Universal lunar and solar calendar package for Laravel and PHP, maintained by a 
 
 ## Highlights
 
-- 🔭 Dual calendar support with an extensible manager (Gregorian + Cambodia lunar included)
+- 🔭 **Three Calendar Types**: Support for Lunar (Islamic/Hijri), Lunisolar (Khmer, Chinese, etc.), and Solar (Gregorian) calendars
 - 🏮 Holiday providers organised per country with translation-ready labels
 - 🌍 Localization files ready for contributors (`resources/lang/{locale}/holidays.php`)
 - ⚙️ Laravel-first experience with auto-discovery, service provider, and facade
@@ -67,6 +67,14 @@ Translations are resolved from `resources/lang/cambodia/{locale}/holidays.php`, 
 
 ### Calendar conversions
 
+The package supports three types of calendars:
+
+1. **Solar Calendar** (Gregorian) - Pure sun-based, 365/366 days/year
+2. **Lunisolar Calendar** (Khmer, Chinese, etc.) - Moon + Sun with leap months, ~354-384 days/year
+3. **Lunar Calendar** (Islamic/Hijri) - Pure moon-based, ~354 days/year
+
+#### Basic Conversions
+
 ```php
 use Carbon\CarbonImmutable;
 use Lisoing\Calendar;
@@ -74,12 +82,42 @@ use Lisoing\Countries\Cambodia;
 
 $gregorian = CarbonImmutable::parse('2025-04-14', 'Asia/Phnom_Penh');
 
-$lunarDate = Calendar::for(Cambodia::calendar())->fromCarbon($gregorian);
-$backToSolar = Calendar::for('gregorian')->fromCalendar($lunarDate);
-$carbon = Calendar::for('gregorian')->toCarbon($backToSolar);
+// Convert to lunisolar calendar
+$lunisolarDate = Calendar::for(Cambodia::class)
+    ->fromCarbon($gregorian)
+    ->toLunisolar();
+echo $lunisolarDate->getCalendar();  // km
 
-echo $lunarDate->getCalendar();  // km
-echo $carbon->toDateString();    // 2025-04-14
+// Convert to Islamic (lunar) calendar
+$islamicDate = Calendar::for('gregorian')
+    ->fromCarbon($gregorian)
+    ->toIslamic();
+echo $islamicDate->getCalendar();  // islamic
+
+// Convert back to Gregorian (solar)
+$backToGregorian = $lunisolarDate->toGregorian();
+echo $backToGregorian->getCalendar();  // gregorian
+```
+
+#### Calendar Type Detection
+
+```php
+// Check calendar type
+Calendar::isSolar('gregorian');      // true
+Calendar::isLunisolar('km');         // true
+Calendar::isLunar('islamic');        // true
+```
+
+#### Fluent Calendar Switching
+
+```php
+// Chain calendar conversions
+$result = Calendar::for('gregorian')
+    ->fromCarbon($gregorian)
+    ->toLunisolar('km')      // Switch to Khmer lunisolar
+    ->toGregorian()          // Switch back to Gregorian
+    ->toIslamic()            // Switch to Islamic lunar
+    ->toString();            // Format as string
 ```
 
 You can still access the full toolkit for advanced features:
@@ -94,10 +132,17 @@ echo $holiday?->name(); // Khmer New Year
 ## Package Structure
 
 - `src/Calendars/` – Calendar engines implementing `CalendarInterface`
-- `src/Holidays/Countries/{ISO}/` – Country-specific holiday providers
+  - `AbstractLunarCalendar.php` – Base class for lunar calendars (Islamic/Hijri)
+  - `AbstractLunisolarCalendar.php` – Base class for lunisolar calendars (Khmer, Chinese, etc.)
+  - `AbstractSolarCalendar.php` – Base class for solar calendars (Gregorian)
+  - `Traits/` – Shared helper methods for each calendar type
+- `src/Countries/{Country}/` – Country-specific implementations
+  - `Calendars/` – Country calendar implementations
+  - `Holidays.php` – Holiday providers
+- `src/Support/Cambodia/` – Cambodia-specific formatting and calculation helpers
+- `src/Holidays/Countries/{ISO}/` – Country-specific holiday providers (legacy, being migrated to Countries/)
 - `resources/lang/{locale}/` – Translation dictionaries for holiday labels
 - `tests/Unit` & `tests/Feature` – PHPUnit suites mirroring the src layout
-- `config/calendar.php` – Optional overrides if you need to customise defaults
 
 ## Roadmap
 

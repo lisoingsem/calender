@@ -96,6 +96,17 @@ abstract class Country
         return $this->region;
     }
 
+    /**
+     * Get the default timezone for this country.
+     * Override in child classes to return country-specific timezone.
+     *
+     * @return string|null Timezone string (e.g., 'Asia/Phnom_Penh') or null to use app timezone
+     */
+    public static function timezone(): ?string
+    {
+        return null;
+    }
+
     abstract public static function defaultLocale(): ?string;
 
     abstract protected static function providerClass(): string;
