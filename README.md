@@ -49,7 +49,7 @@ $lunarDate = Calendar::for(Cambodia::calendar())->fromCarbon($gregorian);
 $backToSolar = Calendar::for('gregorian')->fromCalendar($lunarDate);
 $carbon = Calendar::for('gregorian')->toCarbon($backToSolar);
 
-echo $lunarDate->getCalendar();  // cambodia_lunisolar
+echo $lunarDate->getCalendar();  // km
 echo $carbon->toDateString();    // 2025-04-14
 ```
 
