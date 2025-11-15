@@ -110,7 +110,14 @@ final class SongkranCalculator
      */
     public function getSotin(int $jsYear, int $krom): array
     {
-        $sotin = 363;
+        // Determine starting sotin based on whether previous year has 366 days
+        // Following CarbonKh: if previous year has 366 days, use [363, 364, 365, 366], else [362, 363, 364, 365]
+        // Check if previous JS year has 366 days by checking its krom value
+        // CarbonKh uses: getHas366Days(self::$jsYear - 1) which checks krom for (jsYear - 1)
+        $prevJsYear = $jsYear - 1;
+        $prevKrom = $this->getKromtupol($prevJsYear);
+        $has366Days = $prevKrom <= 207;
+        $sotin = $has366Days ? 363 : 362;
         $loop = 4;
         $somphotlist = [[0, 0, 0]];
 
@@ -129,7 +136,11 @@ final class SongkranCalculator
             $sotin = 364;
         }
 
-        return [$sotin, $dupAngsa];
+        // Return first sotin's angsar value for vonobot calculation
+        // Following CarbonKh: if first sotin's angsar == 0, then 4 days, otherwise 3 days
+        $firstAngsar = $somphotlist[0][1] ?? 0;
+
+        return [$sotin, $dupAngsa, $firstAngsar];
     }
 
     /**
@@ -219,15 +230,11 @@ final class SongkranCalculator
         $krom = $this->getKromtupol($jsYear - 1);
         $sotinR = $this->getSotin($jsYear, $krom);
         $sotin = $sotinR[0];
-        $vonobot = $sotinR[1] === 1 ? 2 : 1;
-
-        // Special rule: When previous year has leap month (botleap === 1)
-        // and Leungsak is Day 7, vonobot should be 2 (4 days New Year)
-        $botleap = $this->getBotetheiLeap($adYear - 1);
-        $leungsak = $this->getLeungsak($adYear);
-        if ($botleap === 1 && $leungsak[0] === 7) {
-            $vonobot = 2;
-        }
+        
+        // Vonobot calculation: Following CarbonKh logic
+        // If first sotin's angsar == 0, then 4 days (vonobot = 2), otherwise 3 days (vonobot = 1)
+        $firstAngsar = $sotinR[2] ?? 0;
+        $vonobot = $firstAngsar === 0 ? 2 : 1;
 
         $mat = $this->matyom($krom, $sotin);
         $phal = $this->phalLumet($mat);
@@ -251,17 +258,21 @@ final class SongkranCalculator
         $ahk = $this->getAharkun($beYear);
         $bot = $this->getBotethei($beYear);
 
+        // Special adjustment: If previous year has both leap month and leap day (botleap === 3),
+        // adjust bot = (bot + 1) % 30 (following CarbonKh's logic for isAdhikameas && isChantreathimeas)
+        $botleap = $this->getBotetheiLeap($adYear - 1);
+        if ($botleap === 3) {
+            $bot = ($bot + 1) % 30;
+        }
+
         if ($bot >= 6) {
             $month = self::CHAET;
-
-            // Check for previous year for leap month (type 1) or both (type 3)
-            $botleap = $this->getBotetheiLeap($adYear - 1);
-            if ($botleap === 1 || $botleap === 3) {
-                $bot++;
-            }
+            // When bot >= 6, use day = bot - 1 (following CarbonKh's lunarDateLerngSak logic)
+            $day = $bot - 1;
         } else {
             $month = self::PISAK;
-            $bot++;
+            // When bot < 6, use day = bot (CarbonKh uses bodithey directly)
+            $day = $bot;
         }
 
         // Day of week: (aharkun - 2) % 7
@@ -271,7 +282,7 @@ final class SongkranCalculator
             $pea += 7;
         }
 
-        return [$bot, $month, $pea];
+        return [$day, $month, $pea];
     }
 
     /**
