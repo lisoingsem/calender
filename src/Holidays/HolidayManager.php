@@ -66,28 +66,21 @@ final class HolidayManager
 
     private function resolveLocale(?string $locale): string
     {
-        $supported = $this->config['supported_locales'] ?? [];
-
-        if (! is_array($supported)) {
-            $supported = [];
+        // If locale is explicitly provided, use it (canonicalized)
+        if ($locale !== null && $locale !== '') {
+            $canonicalLocale = LocaleResolver::canonicalize($locale);
+            if ($canonicalLocale !== '') {
+                return $canonicalLocale;
+            }
         }
 
-        $supported = array_values(array_unique(array_filter(array_map(
-            static fn ($value): string => LocaleResolver::canonicalize(is_string($value) ? $value : ''),
-            $supported
-        ), static fn (string $value): bool => $value !== '')));
-
-        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
-
+        // Otherwise, prioritize Laravel's app locale (like CalendarManager does)
+        // This ensures that when app()->getLocale() returns 'km', it will be used
+        // even if 'km' is not in the supported_locales config
         $appLocale = LocaleResolver::canonicalize((string) App::getLocale());
         $appFallback = LocaleResolver::canonicalize((string) Config::get('app.fallback_locale'));
+        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
 
-        return LocaleResolver::resolve(
-            $locale,
-            $supported,
-            $default,
-            $appLocale,
-            $appFallback
-        );
+        return $appLocale ?: $appFallback ?: $default;
     }
 }
