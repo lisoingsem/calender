@@ -140,7 +140,7 @@ final class SongkranCalculator
      */
     public function isDupAngsa(array $somphotList): int
     {
-        $dup = [0];
+        $dup = [];
 
         for ($i = 0; $i < 4; $i++) {
             $val = $somphotList[$i][1] ?? 0;
@@ -221,6 +221,14 @@ final class SongkranCalculator
         $sotin = $sotinR[0];
         $vonobot = $sotinR[1] === 1 ? 2 : 1;
 
+        // Special rule: When previous year has leap month (botleap === 1)
+        // and Leungsak is Day 7, vonobot should be 2 (4 days New Year)
+        $botleap = $this->getBotetheiLeap($adYear - 1);
+        $leungsak = $this->getLeungsak($adYear);
+        if ($botleap === 1 && $leungsak[0] === 7) {
+            $vonobot = 2;
+        }
+
         $mat = $this->matyom($krom, $sotin);
         $phal = $this->phalLumet($mat);
         $somphot = $this->somphotSun($mat, $phal);
@@ -246,9 +254,9 @@ final class SongkranCalculator
         if ($bot >= 6) {
             $month = self::CHAET;
 
-            // Check for previous year for (type 3)
+            // Check for previous year for leap month (type 1) or both (type 3)
             $botleap = $this->getBotetheiLeap($adYear - 1);
-            if ($botleap === 3) {
+            if ($botleap === 1 || $botleap === 3) {
                 $bot++;
             }
         } else {
