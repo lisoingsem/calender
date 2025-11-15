@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Lisoing\Calendar\ValueObjects;
 
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use JsonSerializable;
 
 /**
  * Wrapper class for single or multiple holidays.
  * Provides convenient methods to access holiday information.
  */
-final class HolidayResult
+final class HolidayResult implements Arrayable, Jsonable, JsonSerializable
 {
     /**
      * @param  array<int, Holiday>  $holidays
@@ -21,6 +24,7 @@ final class HolidayResult
 
     /**
      * Convert to array representation.
+     * Implements Arrayable interface.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -135,6 +139,34 @@ final class HolidayResult
     public function isEmpty(): bool
     {
         return count($this->holidays) === 0;
+    }
+
+    /**
+     * Convert the object to its JSON representation (implements Jsonable).
+     *
+     * @param  int  $options
+     */
+    public function toJson($options = 0): string
+    {
+        return json_encode($this->jsonSerialize(), $options | JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Specify data which should be serialized to JSON (implements JsonSerializable).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
+
+    /**
+     * Convert to string representation.
+     */
+    public function __toString(): string
+    {
+        return $this->toJson();
     }
 }
 
