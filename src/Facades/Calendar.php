@@ -24,6 +24,9 @@ use Lisoing\Calendar\CalendarManager;
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate parse(string $date, ?string $calendar = null, ?string $timezone = null)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate now(?string $calendar = null, ?string $timezone = null)
  * @method static \Lisoing\Calendar\ValueObjects\CalendarDate create(int $year, int $month, int $day, ?string $calendar = null, ?string $timezone = null)
+ * 
+ * CalendarContext methods:
+ * @method \Lisoing\Calendar\Support\HolidayContext holidays(?int $year = null, ?string $locale = null)
  */
 final class Calendar extends Facade
 {

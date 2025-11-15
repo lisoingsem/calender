@@ -209,7 +209,20 @@ Once configured, Packagist will automatically update the package whenever you:
 
 - 📖 **[USAGE.md](USAGE.md)** - Complete guide for using Calendar and Holidays
 - 📝 **[EXAMPLES.md](EXAMPLES.md)** - Code examples and use cases
+- 🧮 **[docs/algorithms.md](docs/algorithms.md)** - Khmer calendar algorithm documentation
+- 📚 **[docs/khmer-calendar-history.md](docs/khmer-calendar-history.md)** - Historical background
 - 🔧 **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
+
+### Algorithm Implementation
+
+The Khmer calendar calculations are based on "Pratitin Soryakkatik-Chankatik 1900-1999" by Mr. Roath Kim Soeun. The implementation includes:
+
+- **Core Calculations**: Aharkun, Avoman, Bodithey, Kromathupul
+- **Leap Year Determination**: Normal years (354 days), leap-day years (355 days), leap-month years (384 days)
+- **Epoch-Based Iteration**: Uses January 1, 1900 as epoch for date conversion
+- **Special Cases**: Handles consecutive 24/6, 25/5, and Avoman 137/0 edge cases
+
+See [docs/algorithms.md](docs/algorithms.md) for detailed algorithm documentation.
 
 ## Contributing
 

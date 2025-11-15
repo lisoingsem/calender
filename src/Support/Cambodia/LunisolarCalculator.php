@@ -383,6 +383,34 @@ final class LunisolarCalculator
         return $this->protetinLeap($buddhistEraYear) === 2;
     }
 
+    /**
+     * Determine the protetin leap status for a given Buddhist Era (BE) year.
+     *
+     * Protetin leap is the actual calendar leap type used in the Khmer calendar.
+     * It resolves the intermediate Bodithey leap result (which can have type 3 = both)
+     * into the final calendar representation (only type 0, 1, or 2).
+     *
+     * Rules:
+     * - If Bodithey leap = 3 (both leap month and day):
+     *   → Current year becomes leap month only (1)
+     *   → Next year gets deferred leap day (2)
+     * - If Bodithey leap = 1 or 2:
+     *   → Protetin leap = Bodithey leap
+     * - If Bodithey leap = 0:
+     *   → If previous year was type 3: Current year gets deferred leap day (2)
+     *   → Otherwise: Normal year (0)
+     *
+     * Returns:
+     *  - 0: Normal year (354 days)
+     *  - 1: Leap month year (384 days)
+     *  - 2: Leap day year (355 days)
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int Protetin leap type (0, 1, or 2)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     * @see https://khmer-calendar.tovnah.com/calendar For algorithm source reference
+     */
     private function protetinLeap(int $buddhistEraYear): int
     {
         $leapType = $this->boditheyLeap($buddhistEraYear);
@@ -395,6 +423,36 @@ final class LunisolarCalculator
         };
     }
 
+    /**
+     * Determine the Bodithey leap status for a given Buddhist Era (BE) year.
+     *
+     * Bodithey leap is an intermediate calculation that can identify both leap month
+     * and leap day in the same year. This is then resolved by protetinLeap() into
+     * the actual calendar representation.
+     *
+     * Algorithm based on "Pratitin Soryakkatik-Chankatik 1900-1999" by Mr. Roath Kim Soeun.
+     *
+     * Leap Month Determination (Bodithey):
+     * - If bodithey >= 25 OR bodithey <= 5: Leap month year
+     * - Special case: If bodithey = 25 AND next year = 5: NOT leap month (only next year is)
+     * - Special case: If bodithey = 24 AND next year = 6: IS leap month (enforced)
+     *
+     * Leap Day Determination (Avoman):
+     * - If Khmer solar leap year AND avoman <= 126: Leap day year
+     * - If NOT Khmer solar leap year AND avoman <= 137: Leap day year
+     * - Special case: If avoman = 137 AND next year = 0: NOT leap day (next year is)
+     *
+     * Returns:
+     *  - 0: Normal year
+     *  - 1: Leap month only
+     *  - 2: Leap day only
+     *  - 3: Both leap month and day (resolved by protetinLeap)
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int Bodithey leap type (0, 1, 2, or 3)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function boditheyLeap(int $buddhistEraYear): int
     {
         $avoman = $this->avoman($buddhistEraYear);
@@ -411,10 +469,12 @@ final class LunisolarCalculator
             $leapDay = $this->avoman($buddhistEraYear + 1) !== 0 ? 1 : 0;
         }
 
+        // Special case: consecutive 25/5 - only 5 is leap month
         if ($bodithey === 25 && $this->bodithey($buddhistEraYear + 1) === 5) {
             $leapMonth = 0;
         }
 
+        // Special case: consecutive 24/6 - 24 is leap month
         if ($bodithey === 24 && $this->bodithey($buddhistEraYear + 1) === 6) {
             $leapMonth = 1;
         }
@@ -427,11 +487,37 @@ final class LunisolarCalculator
         };
     }
 
+    /**
+     * Determine if a year is a Khmer solar leap year (366 days).
+     *
+     * A Khmer solar year is a leap year if kromathupul <= 207.
+     *
+     * Formula: kromathupul = 800 - ((BE × 292207 + 499) mod 800)
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return bool True if solar leap year (366 days), false if normal (365 days)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function isSolarLeapYear(int $buddhistEraYear): bool
     {
         return $this->kromathupul($buddhistEraYear) <= 207;
     }
 
+    /**
+     * Calculate Aharkun (អាហារគុណ ឬ ហារគុណ) for a given Buddhist Era (BE) year.
+     *
+     * Aharkun is a fundamental value used in calculating leap months (Bodithey)
+     * and leap days (Avoman). It is based on traditional Khmer astronomical constants.
+     *
+     * Formula: aharkun = floor((BE × 292207 + 499) / 800) + 4
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year (e.g., 2569)
+     * @return int The calculated Aharkun value
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     * @see https://khmer-calendar.tovnah.com/calendar For algorithm source reference
+     */
     private function aharkun(int $buddhistEraYear): int
     {
         $solarMonthsSinceEpoch = ($buddhistEraYear * 292_207) + 499;
@@ -439,16 +525,66 @@ final class LunisolarCalculator
         return (int) floor($solarMonthsSinceEpoch / 800) + 4;
     }
 
+    /**
+     * Calculate the Aharkun modulus for a given Buddhist Era (BE) year.
+     *
+     * This value is used to derive Kromathupul.
+     *
+     * Formula: aharkun_mod = (BE × 292207 + 499) mod 800
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int The calculated Aharkun modulus (0-799)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function aharkunMod(int $buddhistEraYear): int
     {
         return (($buddhistEraYear * 292_207) + 499) % 800;
     }
 
+    /**
+     * Calculate Kromathupul (ក្រមធុបុល) for a given Buddhist Era (BE) year.
+     *
+     * Kromathupul is used to determine whether a Khmer solar year is a leap year.
+     * It is calculated by subtracting the Aharkun modulus from 800.
+     *
+     * Formula: kromathupul = 800 - aharkun_mod
+     *
+     * Range: 1-800
+     * - If kromathupul <= 207: Solar leap year (366 days)
+     * - Otherwise: Normal solar year (365 days)
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int The resulting Kromathupul value (1-800)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function kromathupul(int $buddhistEraYear): int
     {
         return 800 - $this->aharkunMod($buddhistEraYear);
     }
 
+    /**
+     * Calculate Bodithey (បូតិថី) for a given Buddhist Era (BE) year.
+     *
+     * Bodithey determines if a given year is a leap-month year.
+     * It is used to identify leap month years in the Khmer calendar.
+     *
+     * Formula:
+     *   temp = floor((aharkun × 11 + 25) / 692)
+     *   bodithey = (temp + aharkun + 29) mod 30
+     *
+     * Range: 0-29
+     *
+     * Leap Month Determination:
+     * - If bodithey >= 25 OR bodithey <= 5: Year is a leap month year
+     * - Special cases handled in boditheyLeap() method
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int The calculated Bodithey value (0-29)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function bodithey(int $buddhistEraYear): int
     {
         $aharkun = $this->aharkun($buddhistEraYear);
@@ -457,6 +593,26 @@ final class LunisolarCalculator
         return ($avml + $aharkun + 29) % 30;
     }
 
+    /**
+     * Calculate Avoman (អាវមាន) for a given Buddhist Era (BE) year.
+     *
+     * Avoman determines if a given year is a leap-day year.
+     * It is used to identify leap day years in the Khmer calendar.
+     *
+     * Formula: avoman = (aharkun × 11 + 25) mod 692
+     *
+     * Range: 0-691
+     *
+     * Leap Day Determination:
+     * - If Khmer solar leap year AND avoman <= 126: Leap day year
+     * - If NOT Khmer solar leap year AND avoman <= 137: Leap day year
+     * - Special case: If avoman = 137 AND next year = 0: Not leap day (next year is)
+     *
+     * @param  int  $buddhistEraYear  Buddhist Era year
+     * @return int The calculated Avoman value (0-691)
+     *
+     * @see docs/algorithms.md For detailed algorithm documentation
+     */
     private function avoman(int $buddhistEraYear): int
     {
         $aharkun = $this->aharkun($buddhistEraYear);

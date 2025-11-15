@@ -63,7 +63,8 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
      */
     protected function makeHoliday(array $definition, string $locale): Holiday
     {
-        $date = CarbonImmutable::parse($definition['date']);
+        // Parse date and ensure it's in the correct timezone (start of day in local timezone)
+        $date = CarbonImmutable::parse($definition['date'])->startOfDay();
 
         $slug = $definition['slug'] ?? $definition['id'];
         $translation = $this->resolveTranslation($definition, $slug, $locale);
@@ -94,6 +95,16 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
         // Include description if available
         if (isset($definition['description']) && is_string($definition['description']) && $definition['description'] !== '') {
             $base['description'] = $definition['description'];
+        }
+
+        // Include duration for multi-day holidays (generic for any country)
+        if (isset($definition['duration']) && is_string($definition['duration']) && $definition['duration'] !== '') {
+            $base['duration'] = (int) $definition['duration'];
+        }
+
+        // Include all dates for multi-day holidays (generic for any country)
+        if (isset($definition['all_dates']) && is_string($definition['all_dates']) && $definition['all_dates'] !== '') {
+            $base['all_dates'] = explode(',', $definition['all_dates']);
         }
 
         $extras = $this->setting("observances.$slug.metadata", []);

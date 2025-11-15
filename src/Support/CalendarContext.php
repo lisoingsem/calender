@@ -8,6 +8,8 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\App;
 use Lisoing\Calendar\CalendarManager;
 use Lisoing\Calendar\Formatting\FormatterManager;
+use Lisoing\Calendar\Holidays\HolidayManager;
+use Lisoing\Calendar\Support\HolidayContext;
 use Lisoing\Calendar\ValueObjects\CalendarDate;
 use Lisoing\Countries\Country;
 
@@ -328,6 +330,46 @@ final class CalendarContext
             throw new \RuntimeException('No date available. Call fromCarbon() first.');
         }
         return $this->currentDate->formatDay($locale);
+    }
+
+    /**
+     * Get holidays for the country associated with this calendar context.
+     *
+     * @param  int|null  $year  Optional year (defaults to current year)
+     * @param  string|null  $locale  Optional locale (defaults to app locale)
+     * @return HolidayContext
+     */
+    public function holidays(?int $year = null, ?string $locale = null): HolidayContext
+    {
+        // Get country code from country class if available
+        $countryCode = null;
+        if ($this->countryClass !== null && class_exists($this->countryClass) && is_subclass_of($this->countryClass, Country::class)) {
+            $countryCode = $this->countryClass::code();
+        }
+
+        if ($countryCode === null) {
+            throw new \RuntimeException('No country code available. Use Calendar::for() with a Country class to access holidays.');
+        }
+
+        // Resolve HolidayManager from container
+        if (! function_exists('app')) {
+            throw new \RuntimeException('Laravel application not available. HolidayManager requires Laravel.');
+        }
+
+        /** @var HolidayManager $holidayManager */
+        $holidayManager = app(HolidayManager::class);
+
+        $context = new HolidayContext($holidayManager, $countryCode);
+
+        if ($year !== null) {
+            $context = $context->year($year);
+        }
+
+        if ($locale !== null) {
+            $context = $context->locale($locale);
+        }
+
+        return $context;
     }
 }
 

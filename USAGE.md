@@ -333,7 +333,9 @@ if ($newYear) {
 Each holiday includes metadata with additional information:
 
 ```php
-$holiday = $toolkit->holiday('khmer_new_year', 2025, 'KH', 'en');
+use Lisoing\Calendar\Facades\Toolkit;
+
+$holiday = Toolkit::holiday('khmer_new_year', 2025, 'KH', 'en');
 
 if ($holiday) {
     $metadata = $holiday->metadata();
@@ -347,6 +349,59 @@ if ($holiday) {
     }
 }
 ```
+
+#### Multi-Day Holidays (Khmer New Year)
+
+For multi-day holidays like Khmer New Year, the metadata includes detailed information:
+
+```php
+use Lisoing\Calendar\Facades\Toolkit;
+
+// Get Khmer New Year for 2024
+$newYear = Toolkit::holiday('khmer_new_year', 2024, 'KH', 'en');
+
+if ($newYear) {
+    $metadata = $newYear->metadata();
+    
+    // Basic information
+    echo "Holiday: " . $newYear->name() . PHP_EOL;
+    echo "Start Date: " . $newYear->date()->format('Y-m-d') . PHP_EOL;
+    
+    // Multi-day holiday metadata
+    if (isset($metadata['duration'])) {
+        echo "Duration: " . $metadata['duration'] . " days" . PHP_EOL;
+    }
+    
+    // All dates for the holiday period
+    if (isset($metadata['all_dates'])) {
+        echo "All Dates: " . implode(', ', $metadata['all_dates']) . PHP_EOL;
+    }
+    
+    // Cambodia-specific Khmer New Year details
+    if (isset($metadata['songkran_date'])) {
+        echo "Songkran Date: " . $metadata['songkran_date'] . PHP_EOL;
+    }
+    if (isset($metadata['leungsak_date'])) {
+        echo "Leungsak Date: " . $metadata['leungsak_date'] . PHP_EOL;
+    }
+    if (isset($metadata['vonobot_days'])) {
+        echo "Vonobot Days: " . $metadata['vonobot_days'] . PHP_EOL;
+    }
+}
+```
+
+**Example Output:**
+```
+Holiday: Khmer New Year
+Start Date: 2024-04-13
+Duration: 3 days
+All Dates: 2024-04-13, 2024-04-14, 2024-04-15
+Songkran Date: 2024-04-13
+Leungsak Date: 2024-04-15
+Vonobot Days: 1
+```
+
+For more detailed examples, see [EXAMPLES_HOLIDAYS.md](EXAMPLES_HOLIDAYS.md).
 
 ### Localization
 
