@@ -35,6 +35,7 @@ final class HolidayResult implements Arrayable, Jsonable, JsonSerializable
                 'id' => $holiday->identifier(),
                 'name' => $holiday->name(),
                 'title' => $holiday->name(),
+                'description' => $holiday->metadata()['description'] ?? null,
                 'date' => $holiday->date()->format('Y-m-d'),
                 'country' => $holiday->country(),
                 'locale' => $holiday->locale(),

@@ -75,7 +75,7 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
             date: $date,
             country: $this->countryCode(),
             locale: $locale,
-            metadata: $this->resolveMetadata($definition, $slug)
+            metadata: $this->resolveMetadata($definition, $slug, $locale)
         );
     }
 
@@ -88,13 +88,13 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
      * @param  array<string, string>  $definition
      * @return array<string, mixed>
      */
-    protected function resolveMetadata(array $definition, string $slug): array
+    protected function resolveMetadata(array $definition, string $slug, string $locale): array
     {
         $base = ['type' => $definition['type'] ?? 'public'];
 
-        // Include description if available
+        // Include description if available (translate if it's a translation key)
         if (isset($definition['description']) && is_string($definition['description']) && $definition['description'] !== '') {
-            $base['description'] = $definition['description'];
+            $base['description'] = $this->resolveDescription($definition['description'], $slug, $locale);
         }
 
         // Include duration for multi-day holidays (generic for any country)
@@ -177,6 +177,42 @@ abstract class AbstractHolidayProvider implements ConfigurableHolidayProviderInt
             locale: $locale,
             fallbackLocale: $fallback
         );
+    }
+
+    /**
+     * Resolve and translate description.
+     *
+     * @param  string  $descriptionKey  Description key or text
+     * @param  string  $slug  Holiday slug
+     * @param  string  $locale  Locale
+     */
+    protected function resolveDescription(string $descriptionKey, string $slug, string $locale): string
+    {
+        // Check for override in settings
+        $override = $this->setting("observances.$slug.description");
+        if (is_string($override) && $override !== '') {
+            $descriptionKey = $override;
+        }
+
+        // If it contains '::', it's a full translation key
+        if (str_contains($descriptionKey, '::')) {
+            return (string) Lang::get($descriptionKey, [], $locale);
+        }
+
+        // Try to translate using HolidayTranslator
+        $fallbackLocale = Config::get('calendar.fallback_locale');
+        $fallback = is_string($fallbackLocale) ? $fallbackLocale : 'en';
+
+        $translated = HolidayTranslator::translate(
+            directory: $this->countryDirectory(),
+            key: $descriptionKey,
+            locale: $locale,
+            fallbackLocale: $fallback
+        );
+
+        // If translation returns the key itself, it means no translation was found
+        // Return the key as-is (it might be plain text)
+        return $translated;
     }
 
     protected function countryDirectory(): string

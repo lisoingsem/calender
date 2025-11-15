@@ -150,9 +150,9 @@ final class Holidays extends AbstractHolidayProvider
      * @param  array<string, string>  $definition
      * @return array<string, mixed>
      */
-    protected function resolveMetadata(array $definition, string $slug): array
+    protected function resolveMetadata(array $definition, string $slug, string $locale): array
     {
-        $base = parent::resolveMetadata($definition, $slug);
+        $base = parent::resolveMetadata($definition, $slug, $locale);
 
         // Add Cambodia-specific metadata for Khmer New Year
         if ($slug === 'khmer_new_year' || str_starts_with($slug, 'khmer_new_year_')) {
