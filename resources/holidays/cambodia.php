@@ -61,7 +61,7 @@ return [
         [
             'slug' => 'meak_bochea',
             'resolver' => 'lunar_phase',
-            'month_slug' => 'magha',
+            'month_slug' => 'makha',
             'phase' => 'waxing',
             'day' => 15,
             'type' => 'public',
@@ -71,7 +71,7 @@ return [
         [
             'slug' => 'chinese_new_year',
             'resolver' => 'lunar_phase',
-            'month_slug' => 'magha',
+            'month_slug' => 'makha',
             'phase' => 'waxing',
             'day' => 1,
             'type' => 'public',
