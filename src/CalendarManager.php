@@ -50,19 +50,26 @@ final class CalendarManager
     /**
      * Resolve locale from parameter or Laravel's current locale.
      * Uses the fallback locale configured in the service provider.
+     * 
+     * Note: This method does not check against supported locales list.
+     * It prioritizes the explicitly passed locale, then Laravel's app locale,
+     * then fallback locale. If you need to restrict to supported locales,
+     * use LocaleResolver::resolve() with a supported locales array.
      */
     public function resolveLocale(?string $locale): string
     {
-        $appLocale = LocaleResolver::canonicalize((string) App::getLocale());
-        $appFallback = LocaleResolver::canonicalize((string) Config::get('app.fallback_locale'));
-        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
-
+        // If locale is explicitly provided, use it (canonicalized)
         if ($locale !== null && $locale !== '') {
             $canonicalLocale = LocaleResolver::canonicalize($locale);
             if ($canonicalLocale !== '') {
                 return $canonicalLocale;
             }
         }
+
+        // Otherwise, use Laravel's app locale, then fallback
+        $appLocale = LocaleResolver::canonicalize((string) App::getLocale());
+        $appFallback = LocaleResolver::canonicalize((string) Config::get('app.fallback_locale'));
+        $default = LocaleResolver::canonicalize($this->fallbackLocale) ?: 'en';
 
         return $appLocale ?: $appFallback ?: $default;
     }
