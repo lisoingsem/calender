@@ -110,24 +110,57 @@ final class LunisolarCalculator
         $leungsakDay = $leungsakData[0];
         $leungsakMonth = $leungsakData[1];
 
-        // Calculate Songkran date
-        // Start from April 17 as base, then adjust based on Leungsak
-        $base = CarbonImmutable::create(
+        // Calculate Songkran date using CarbonKh's epoch method
+        // Start from April 17 as epoch, then adjust based on Leungsak lunar date
+        $epochLerngSak = CarbonImmutable::create(
+            $gregorianYear,
+            4,
+            17,
+            0,
+            0,
+            0,
+            LunisolarConstants::TIMEZONE
+        );
+
+        // Following chhankitek's getKhmerNewYearDateTime method:
+        // 1. Create epoch with the time of new year (not 00:00:00)
+        $epochLerngSak = CarbonImmutable::create(
             $gregorianYear,
             4,
             17,
             $songkranTime[0],
             $songkranTime[1],
             0,
-            LunisolarConstants::TIMEZONE
+            'Asia/Phnom_Penh'
         );
 
-        // Find the actual Leungsak date in lunar calendar
-        $lerngSakLunar = $this->findLunarDateForMonthAndDay($gregorianYear, $leungsakMonth, $leungsakDay);
-        $lerngSakGregorian = $lerngSakLunar;
+        // 2. Find the lunar date for the epoch
+        $lunarPositionEpoch = $this->findLunarPosition($epochLerngSak);
+        $epochMonthIndex = $lunarPositionEpoch->month();
+        $epochDay = $lunarPositionEpoch->day();
 
-        // Calculate Songkran date: Leungsak - (Vonobot days + 1)
-        $songkranDate = $lerngSakGregorian->subDays($vonobotDays + 1);
+        // 3. Calculate difference from epoch based on Leungsak lunar date
+        // Following chhankitek: diffFromEpoch = ((epochMonth - 4) * 30 + epochDay) - ((leungsakMonth - 4) * 30 + leungsakDay)
+        // Note: chhankitek uses 0-indexed months (4 or 5), our getLeungsak returns 1-indexed (5 or 6)
+        // Convert to 0-indexed: CHAET=5 -> 4, PISAK=6 -> 5
+        $leungsakMonth0Indexed = $leungsakMonth - 1; // Convert from 1-indexed to 0-indexed
+        $diffFromEpoch = (($epochMonthIndex - 4) * 30 + $epochDay) - (($leungsakMonth0Indexed - 4) * 30 + $leungsakDay);
+
+        // 4. Calculate Songkran date: epoch - (diffFromEpoch + numberOfNewYearDay - 1)
+        // chhankitek: return $epochLerngSak->subDays($diffFromEpoch + $numberNewYearDay - 1);
+        $numberOfNewYearDay = $vonobotDays === 2 ? 4 : 3;
+        $songkranDate = $epochLerngSak->subDays($diffFromEpoch + $numberOfNewYearDay - 1);
+
+        // Calculate actual Leungsak date: Songkran + (duration - 1) days
+        // The official calendar shows Leungsak as Songkran day + (duration - 1)
+        // For example: Songkran on 5កើត, duration 4 days → Leungsak on 8កើត (5 + 3)
+        $duration = $vonobotDays === 2 ? 4 : 3;
+        $lerngSakGregorian = $songkranDate->addDays($duration - 1)->startOfDay();
+        
+        // Get the actual lunar date for Leungsak using findLunarPosition directly
+        $lerngSakLunarPosition = $this->findLunarPosition($lerngSakGregorian);
+        $actualLeungsakDay = $lerngSakLunarPosition->day();
+        $actualLeungsakMonth = $lerngSakLunarPosition->month();
 
         // Get day of week for Songkran (0=Sunday, 1=Monday, ..., 6=Saturday)
         $dayOfWeek = $songkranDate->dayOfWeek; // Carbon uses 0=Sunday
@@ -145,7 +178,7 @@ final class LunisolarCalculator
             duration: $duration,
             dayOfWeek: $dayOfWeek,
             angel: $angel,
-            leungsakLunar: [$leungsakDay, $leungsakMonth]
+            leungsakLunar: [$actualLeungsakDay, $actualLeungsakMonth]
         );
     }
 

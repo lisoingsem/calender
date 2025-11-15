@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 return [
-    'songkran' => 'Songkran',
-    'vonabot' => 'Vonabot',
-    'leungsak' => 'Leungsak',
+    'songkran' => 'Maha Songkran',
+    'maha_songkran' => 'Maha Songkran',
+    'vonabot' => 'Vara Vanabat',
+    'vara_vanabat' => 'Vara Vanabat',
+    'leungsak' => 'Vara Loeng Sak',
+    'vara_loeng_sak' => 'Vara Loeng Sak',
 
     'food_offering_to_temple' => 'Bring food offering to the temple in the morning and listen to monk chanting',
     'build_sand_hill' => 'Take sand to build sand hill next to the temple or Bodhi tree',

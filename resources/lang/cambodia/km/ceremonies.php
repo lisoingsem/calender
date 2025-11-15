@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 return [
-    'songkran' => 'សង្រ្កាន្ត',
-    'vonabot' => 'វនប័ត',
-    'leungsak' => 'ឡើងស័ក',
+    'songkran' => 'មហា​សង្រ្កាន្ត',
+    'maha_songkran' => 'មហា​សង្រ្កាន្ត',
+    'vonabot' => 'វារ:​វ័ន​បត',
+    'vara_vanabat' => 'វារ:​វ័ន​បត',
+    'leungsak' => 'ថ្ងៃ​ឡើង​ស័ក',
+    'vara_loeng_sak' => 'ថ្ងៃ​ឡើង​ស័ក',
 
     'food_offering_to_temple' => 'នាំចង្ហាន់ទៅវត្តនៅពេលព្រឹក និងស្តាប់ព្រះសង្ឃសូត្រធម៌',
     'build_sand_hill' => 'យកខ្សាច់ទៅកសាងភ្នំខ្សាច់នៅក្បែរវត្ត ឬដើមពោធិ៍',

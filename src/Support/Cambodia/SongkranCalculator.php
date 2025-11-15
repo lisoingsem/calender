@@ -108,12 +108,92 @@ final class SongkranCalculator
      * @param  int  $krom  Kromtupol value
      * @return array{0: int, 1: int} [Sotin value, Vonobot (0=1 day, 1=2 days)]
      */
+    /**
+     * Get sun information using CarbonKh's full sunInaugurationAsLibda calculation.
+     *
+     * @param  int  $sotin  Sotin value
+     * @param  int  $jsYear  Jolsakarach year
+     * @return array{0: int, 1: int, 2: int} [reasey, angsar, libda] from sunInaugurationAsLibda
+     */
+    private function getSunInfo(int $sotin, int $jsYear): array
+    {
+        // Get previous year's info (CarbonKh uses jsYear - 1)
+        $prevJsYear = $jsYear - 1;
+        $prevKrom = $this->getKromtupol($prevJsYear);
+
+        // sunAverageAsLibda calculation
+        $r2 = 800 * $sotin + $prevKrom;
+        $reasey = (int) floor($r2 / 24350);
+        $r3 = $r2 % 24350;
+        $angsar = (int) floor($r3 / 811);
+        $r4 = $r3 % 811;
+        $l1 = (int) floor($r4 / 14);
+        $libda = $l1 - 3;
+        $sunAverageAsLibda = 30 * 60 * $reasey + 60 * $angsar + $libda;
+
+        // leftOver calculation
+        $s1 = 30 * 60 * 2 + 60 * 20;
+        $leftOver = $sunAverageAsLibda - $s1;
+        if ($sunAverageAsLibda < $s1) {
+            $leftOver += 30 * 60 * 12;
+        }
+
+        // kaen calculation
+        $kaen = (int) floor($leftOver / (30 * 60));
+
+        // lastLeftOver calculation
+        $rs = -1;
+        if (in_array($kaen, [0, 1, 2])) {
+            $rs = $kaen;
+        } elseif (in_array($kaen, [3, 4, 5])) {
+            $rs = 30 * 60 * 6 - $leftOver;
+        } elseif (in_array($kaen, [6, 7, 8])) {
+            $rs = $leftOver - 30 * 60 * 6;
+        } elseif (in_array($kaen, [9, 10, 11])) {
+            $rs = 30 * 60 * 11 + 60 * 29 + 60 - $leftOver;
+        }
+
+        $lastLeftOverReasey = (int) floor($rs / (30 * 60));
+        $lastLeftOverAngsar = (int) floor(($rs % (30 * 60)) / 60);
+        $lastLeftOverLibda = $rs % 60;
+
+        // khan calculation
+        $khan = $lastLeftOverAngsar >= 15
+            ? 2 * $lastLeftOverReasey + 1
+            : 2 * $lastLeftOverReasey;
+
+        // pouichalip calculation
+        $pouichalip = $lastLeftOverAngsar >= 15
+            ? 60 * ($lastLeftOverAngsar - 15) + $lastLeftOverLibda
+            : 60 * $lastLeftOverAngsar + $lastLeftOverLibda;
+
+        // phol calculation
+        $multiplicities = [35, 32, 27, 22, 13, 5];
+        $chhayas = [0, 35, 67, 94, 116, 129];
+        $chhayaMultiplicity = ($khan >= 0 && $khan <= 5) ? $multiplicities[$khan] : 0;
+        $chhaya = ($khan >= 0 && $khan <= 5) ? $chhayas[$khan] : 134;
+        $q = (int) floor(($pouichalip * $chhayaMultiplicity) / 900);
+        $pholAngsar = (int) floor(($q + $chhaya) / 60);
+        $pholLibda = ($q + $chhaya) % 60;
+        $pholAsLibda = 30 * 60 * 0 + 60 * $pholAngsar + $pholLibda;
+
+        // sunInaugurationAsLibda calculation
+        $sunInaugurationAsLibda = $kaen <= 5
+            ? $sunAverageAsLibda - $pholAsLibda
+            : $sunAverageAsLibda + $pholAsLibda;
+
+        // Convert back to reasey, angsar, libda
+        $resultReasey = (int) floor($sunInaugurationAsLibda / (30 * 60));
+        $resultAngsar = (int) floor(($sunInaugurationAsLibda % (30 * 60)) / 60);
+        $resultLibda = $sunInaugurationAsLibda % 60;
+
+        return [$resultReasey, $resultAngsar, $resultLibda];
+    }
+
     public function getSotin(int $jsYear, int $krom): array
     {
         // Determine starting sotin based on whether previous year has 366 days
         // Following CarbonKh: if previous year has 366 days, use [363, 364, 365, 366], else [362, 363, 364, 365]
-        // Check if previous JS year has 366 days by checking its krom value
-        // CarbonKh uses: getHas366Days(self::$jsYear - 1) which checks krom for (jsYear - 1)
         $prevJsYear = $jsYear - 1;
         $prevKrom = $this->getKromtupol($prevJsYear);
         $has366Days = $prevKrom <= 207;
@@ -121,12 +201,11 @@ final class SongkranCalculator
         $loop = 4;
         $somphotlist = [[0, 0, 0]];
 
+        // Calculate using CarbonKh's sunInaugurationAsLibda method
         for ($i = 0; $i < $loop; $i++) {
             $currentSotin = $sotin + $i;
-            $mat = $this->matyom($krom, $currentSotin);
-            $phal = $this->phalLumet($mat);
-            $somphot = $this->somphotSun($mat, $phal);
-            $somphotlist[$i] = $somphot;
+            $sunInfo = $this->getSunInfo($currentSotin, $jsYear);
+            $somphotlist[$i] = $sunInfo;
         }
 
         $dupAngsa = $this->isDupAngsa($somphotlist);
@@ -236,13 +315,81 @@ final class SongkranCalculator
         $firstAngsar = $sotinR[2] ?? 0;
         $vonobot = $firstAngsar === 0 ? 2 : 1;
 
-        $mat = $this->matyom($krom, $sotin);
-        $phal = $this->phalLumet($mat);
-        $somphot = $this->somphotSun($mat, $phal);
-        $liba = $somphot[2];
-        $time = $this->songkranTime($liba);
+        // Time calculation: Following CarbonKh's timeOfNewYear logic
+        // Find the sotin with angsar == 0 for time calculation
+        $prevJsYear = $jsYear - 1;
+        $prevKrom = $this->getKromtupol($prevJsYear);
+        $has366Days = $prevKrom <= 207;
+        $startSotin = $has366Days ? 363 : 362;
+        $sotinWithAngsar0 = null;
+        $libdaForTime = null;
+
+        for ($i = 0; $i < 4; $i++) {
+            $currentSotin = $startSotin + $i;
+            $sunInfo = $this->getSunInfo($currentSotin, $jsYear);
+            if ($sunInfo[1] === 0) {
+                $sotinWithAngsar0 = $currentSotin;
+                $libdaForTime = $sunInfo[2];
+                break;
+            }
+        }
+
+        if ($sotinWithAngsar0 === null || $libdaForTime === null) {
+            // Fallback: use the sotin value and calculate time from it
+            $sunInfo = $this->getSunInfo($sotin, $jsYear);
+            $libdaForTime = $sunInfo[2];
+        }
+
+        // Calculate time: 24 * 60 - libda * 24 (CarbonKh formula)
+        $minutes = 24 * 60 - $libdaForTime * 24;
+        $time = [
+            (int) floor($minutes / 60),
+            (int) ($minutes % 60),
+        ];
 
         return [$vonobot, $time];
+    }
+
+    /**
+     * Get Leungsak date and day of week.
+     *
+     * @param  int  $adYear  Gregorian year
+     * @return array{0: int, 1: int, 2: int} [date (1-15), month (5 or 6), dayOfWeek (0-6)]
+     */
+    /**
+     * Check if a JS year has a leap month (Adhikameas).
+     * Following CarbonKh's getIsAdhikameas logic.
+     *
+     * @param  int  $jsYear  Jolsakarach year
+     * @return bool
+     */
+    private function isAdhikameas(int $jsYear): bool
+    {
+        $beYear = $jsYear + 638;
+        $bodithey = $this->getBotethei($beYear);
+        $nextBodithey = $this->getBotethei($beYear + 1);
+
+        // CarbonKh logic: !(bodithey === 25 && nextBodithey === 5) && (bodithey > 24 || nextBodithey < 6 || (bodithey === 24 && nextBodithey === 6))
+        return !($bodithey === 25 && $nextBodithey === 5) && ($bodithey > 24 || $nextBodithey < 6 || ($bodithey === 24 && $nextBodithey === 6));
+    }
+
+    /**
+     * Check if a JS year has a leap day (Chantreathimeas).
+     * Following CarbonKh's getIsChantreathimeas logic.
+     *
+     * @param  int  $jsYear  Jolsakarach year
+     * @return bool
+     */
+    private function isChantreathimeas(int $jsYear): bool
+    {
+        $beYear = $jsYear + 638;
+        $avoman = $this->getAvoman($beYear);
+        $nextAvoman = $this->getAvoman($beYear + 1);
+        $prevAvoman = $this->getAvoman($beYear - 1);
+        $has366Days = $this->getKromtupol($jsYear) <= 207;
+
+        // CarbonKh logic
+        return ($has366Days && $avoman < 127) || (!($avoman === 137 && $nextAvoman === 0) && ((!$has366Days && $avoman < 138) || ($prevAvoman === 137 && $avoman === 0)));
     }
 
     /**
@@ -258,10 +405,10 @@ final class SongkranCalculator
         $ahk = $this->getAharkun($beYear);
         $bot = $this->getBotethei($beYear);
 
-        // Special adjustment: If previous year has both leap month and leap day (botleap === 3),
-        // adjust bot = (bot + 1) % 30 (following CarbonKh's logic for isAdhikameas && isChantreathimeas)
-        $botleap = $this->getBotetheiLeap($adYear - 1);
-        if ($botleap === 3) {
+        // Special adjustment: If previous JS year has both isAdhikameas AND isChantreathimeas,
+        // adjust bot = (bot + 1) % 30 (following CarbonKh's lunarDateLerngSak logic)
+        $prevJsYear = $jsYear - 1;
+        if ($this->isAdhikameas($prevJsYear) && $this->isChantreathimeas($prevJsYear)) {
             $bot = ($bot + 1) % 30;
         }
 

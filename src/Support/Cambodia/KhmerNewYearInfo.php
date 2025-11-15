@@ -87,15 +87,12 @@ final class KhmerNewYearInfo
      */
     public function allDates(): array
     {
-        $dates = [$this->songkranDate];
+        $dates = [];
 
-        // Add Vonabot days
-        for ($i = 1; $i <= $this->vonobotDays; $i++) {
-            $dates[] = $this->songkranDate->addDays($i);
+        // Add all days from Songkran to Leungsak
+        for ($i = 0; $i < $this->duration; $i++) {
+            $dates[] = $this->songkranDate->addDays($i)->startOfDay();
         }
-
-        // Add Leungsak
-        $dates[] = $this->leungsakDate;
 
         return $dates;
     }
@@ -107,13 +104,15 @@ final class KhmerNewYearInfo
      */
     public function dayNames(): array
     {
-        $names = ['songkran'];
+        $names = ['maha_songkran'];
 
-        for ($i = 1; $i <= $this->vonobotDays; $i++) {
-            $names[] = 'vonabot';
+        // Add Vonabot days (middle days)
+        for ($i = 1; $i < $this->duration - 1; $i++) {
+            $names[] = 'vara_vanabat';
         }
 
-        $names[] = 'leungsak';
+        // Add Leungsak (last day)
+        $names[] = 'vara_loeng_sak';
 
         return $names;
     }
