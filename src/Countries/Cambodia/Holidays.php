@@ -165,9 +165,174 @@ final class Holidays extends AbstractHolidayProvider
             if (isset($definition['vonobot_days'])) {
                 $base['vonobot_days'] = (int) $definition['vonobot_days'];
             }
+            
+            // Add formatted day details for each day of the celebration
+            $year = (int) (explode('_', $definition['id'])[2] ?? date('Y'));
+            $info = $this->calculator->getKhmerNewYearInfo($year);
+            $base['day_details'] = $this->formatDayDetails($info, $locale);
+            
+            // Add angel information
+            $angel = $info->angel();
+            $base['angel'] = [
+                'name_key' => $angel->nameKey(),
+                'jewelry_key' => $angel->jewelryKey(),
+                'flower_key' => $angel->flowerKey(),
+                'food_key' => $angel->foodKey(),
+                'right_hand_key' => $angel->rightHandKey(),
+                'left_hand_key' => $angel->leftHandKey(),
+                'animal_key' => $angel->animalKey(),
+            ];
         }
 
         return $base;
+    }
+
+    /**
+     * Format detailed information for each day of Khmer New Year.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function formatDayDetails(\Lisoing\Calendar\Support\Cambodia\KhmerNewYearInfo $info, string $locale): array
+    {
+        $allDates = $info->allDates();
+        $dayNames = $info->dayNames();
+        $details = [];
+        
+        foreach ($allDates as $index => $date) {
+            $dayName = $dayNames[$index] ?? 'maha_songkran';
+            
+            // Get full Khmer date string
+            $lunar = $this->calculator->toLunar($date);
+            $fullKhmerString = $this->formatFullKhmerDate($lunar, $date, $locale);
+            
+            // Get Gregorian date formatted
+            $gregorianDate = $date->format('F j, Y');
+            
+            // Get ceremony name
+            $ceremonyName = $this->getCeremonyName($dayName, $locale);
+            
+            // Get English translation
+            $englishTranslation = $this->getEnglishTranslation($dayName, $info, $date, $locale);
+            
+            $details[] = [
+                'date' => $date->toDateString(),
+                'full_khmer_date' => $fullKhmerString,
+                'gregorian_date' => $gregorianDate,
+                'ceremony_name' => $ceremonyName,
+                'english_translation' => $englishTranslation,
+                'day_name_key' => $dayName,
+            ];
+        }
+        
+        return $details;
+    }
+
+    /**
+     * Format full Khmer date string.
+     */
+    private function formatFullKhmerDate(\Lisoing\Calendar\Support\Cambodia\LunarDate $lunar, \Carbon\CarbonImmutable $date, string $locale): string
+    {
+        $weekdays = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.weekdays", [], $locale);
+        $lunarMonths = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.lunar_months", [], $locale);
+        $animalYears = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.animal_years", [], $locale);
+        $eraYears = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.era_years", [], $locale);
+        $solarMonths = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.solar_months", [], $locale);
+        $phases = \Illuminate\Support\Facades\Lang::get("cambodia::lunisolar.phases", [], $locale);
+        
+        // Day of week
+        $dayOfWeekKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][$lunar->weekdayIndex()] ?? 'sunday';
+        $dayOfWeek = is_array($weekdays) ? ($weekdays[$dayOfWeekKey] ?? $dayOfWeekKey) : $dayOfWeekKey;
+        
+        // Lunar day
+        $lunarDay = $lunar->lunarDay();
+        $phaseKey = $lunarDay->phaseKey();
+        $phase = is_array($phases) ? ($phases[$phaseKey] ?? ($phaseKey === 'waxing' ? 'កើត' : 'រោច')) : ($phaseKey === 'waxing' ? 'កើត' : 'រោច');
+        $phaseDay = $lunarDay->day();
+        $lunarDayStr = $this->formatNumber($phaseDay, $locale) . $phase;
+        
+        // Lunar month
+        $lunarMonthSlug = $lunar->lunarMonthSlug();
+        $lunarMonth = is_array($lunarMonths) ? ($lunarMonths[$lunarMonthSlug] ?? $lunarMonthSlug) : $lunarMonthSlug;
+        
+        // Animal year
+        $animalYearIndex = $lunar->animalYearIndex();
+        $animalKeys = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig'];
+        $animalKey = $animalKeys[$animalYearIndex] ?? 'rat';
+        $animalYear = is_array($animalYears) ? ($animalYears[$animalKey] ?? $animalKey) : $animalKey;
+        
+        // Era year
+        $eraYearIndex = $lunar->eraYearIndex();
+        $eraKeys = ['samriddhi_sak', 'eka_sak', 'dvi_sak', 'tri_sak', 'catur_sak', 'pancha_sak', 'sat_sak', 'sapta_sak', 'astha_sak', 'nava_sak'];
+        $eraKey = $eraKeys[$eraYearIndex] ?? 'samriddhi_sak';
+        $eraYear = is_array($eraYears) ? ($eraYears[$eraKey] ?? $eraKey) : $eraKey;
+        
+        // Buddhist Era year
+        $beYear = $this->formatNumber($lunar->buddhistEraYear(), $locale);
+        
+        // Gregorian date parts
+        $gregorianDay = $this->formatNumber($date->day, $locale);
+        $monthKeys = ['mekara', 'kompheak', 'mina', 'mesa', 'ousaphea', 'mithona', 'kakkada', 'seha', 'kakanya', 'tula', 'vicchika', 'thnou'];
+        $monthKey = $monthKeys[$date->month - 1] ?? 'mesa';
+        $gregorianMonth = is_array($solarMonths) ? ($solarMonths[$monthKey] ?? $monthKey) : $monthKey;
+        $gregorianYear = $this->formatNumber($date->year, $locale);
+        
+        if ($locale === 'km' || str_starts_with($locale, 'km_')) {
+            return "ថ្ងៃ{$dayOfWeek} {$lunarDayStr} ខែ{$lunarMonth} ឆ្នាំ{$animalYear} {$eraYear} ពុទ្ធសករាជ {$beYear} ត្រូវនឹងថ្ងៃទី{$gregorianDay} ខែ{$gregorianMonth} ឆ្នាំ{$gregorianYear}";
+        }
+        
+        return "{$dayOfWeek} {$lunarDayStr} {$lunarMonth} {$animalYear} {$eraYear} Buddhist Era {$beYear} = {$gregorianDay} {$gregorianMonth} {$gregorianYear}";
+    }
+
+    /**
+     * Get ceremony name for the day.
+     */
+    private function getCeremonyName(string $dayNameKey, string $locale): string
+    {
+        $ceremonies = \Illuminate\Support\Facades\Lang::get("cambodia::ceremonies", [], $locale);
+        
+        $ceremonyName = is_array($ceremonies) ? ($ceremonies[$dayNameKey] ?? $dayNameKey) : $dayNameKey;
+        
+        // Add "ពិធី​បុណ្យ​ចូល​ឆ្នាំ​ថ្មី ប្រពៃណី​ជាតិ - " prefix for Khmer
+        if ($locale === 'km' || str_starts_with($locale, 'km_')) {
+            return "ពិធី​បុណ្យ​ចូល​ឆ្នាំ​ថ្មី ប្រពៃណី​ជាតិ - {$ceremonyName}";
+        }
+        
+        return "Khmer New Year - {$ceremonyName}";
+    }
+
+    /**
+     * Get English translation with time for Songkran day.
+     */
+    private function getEnglishTranslation(string $dayNameKey, \Lisoing\Calendar\Support\Cambodia\KhmerNewYearInfo $info, \Carbon\CarbonImmutable $date, string $locale): string
+    {
+        $ceremonies = \Illuminate\Support\Facades\Lang::get("cambodia::ceremonies", [], 'en');
+        $ceremonyName = is_array($ceremonies) ? ($ceremonies[$dayNameKey] ?? $dayNameKey) : $dayNameKey;
+        
+        // For Songkran day, add the time
+        if ($dayNameKey === 'maha_songkran') {
+            $time = $info->angelDescentTime('en');
+            return "(Khmer New Year - {$ceremonyName} at {$time})";
+        }
+        
+        return "(Khmer New Year - {$ceremonyName})";
+    }
+
+    /**
+     * Format number with Khmer digits if locale is Khmer.
+     */
+    private function formatNumber(int $number, string $locale): string
+    {
+        if ($locale === 'km' || str_starts_with($locale, 'km_')) {
+            $khmerDigits = \Lisoing\Calendar\Support\Cambodia\LunisolarConstants::khmerDigits();
+            $numberStr = (string) $number;
+            $result = '';
+            foreach (str_split($numberStr) as $digit) {
+                $result .= $khmerDigits[$digit] ?? $digit;
+            }
+            return $result;
+        }
+        
+        return (string) $number;
     }
 
     /**
