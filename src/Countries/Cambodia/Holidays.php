@@ -166,22 +166,28 @@ final class Holidays extends AbstractHolidayProvider
                 $base['vonobot_days'] = (int) $definition['vonobot_days'];
             }
             
-            // Add formatted day details for each day of the celebration
-            $year = (int) (explode('_', $definition['id'])[2] ?? date('Y'));
-            $info = $this->calculator->getKhmerNewYearInfo($year);
-            $base['day_details'] = $this->formatDayDetails($info, $locale);
-            
-            // Add angel information
-            $angel = $info->angel();
-            $base['angel'] = [
-                'name_key' => $angel->nameKey(),
-                'jewelry_key' => $angel->jewelryKey(),
-                'flower_key' => $angel->flowerKey(),
-                'food_key' => $angel->foodKey(),
-                'right_hand_key' => $angel->rightHandKey(),
-                'left_hand_key' => $angel->leftHandKey(),
-                'animal_key' => $angel->animalKey(),
-            ];
+            // Add formatted day details for each day of the celebration (robust against failures)
+            try {
+                $year = (int) (explode('_', $definition['id'])[2] ?? date('Y'));
+                $info = $this->calculator->getKhmerNewYearInfo($year);
+                $base['day_details'] = $this->formatDayDetails($info, $locale);
+
+                // Add angel information
+                $angel = $info->angel();
+                $base['angel'] = [
+                    'name_key' => $angel->nameKey(),
+                    'jewelry_key' => $angel->jewelryKey(),
+                    'flower_key' => $angel->flowerKey(),
+                    'food_key' => $angel->foodKey(),
+                    'right_hand_key' => $angel->rightHandKey(),
+                    'left_hand_key' => $angel->leftHandKey(),
+                    'animal_key' => $angel->animalKey(),
+                ];
+            } catch (\Throwable $e) {
+                // Do not break the response; expose minimal info and an error note
+                $base['day_details'] = [];
+                $base['day_details_error'] = 'unavailable';
+            }
         }
 
         return $base;
@@ -190,7 +196,7 @@ final class Holidays extends AbstractHolidayProvider
     /**
      * Format detailed information for each day of Khmer New Year.
      *
-     * @return array<int, array<string, string>>
+     * @return array<int, array<string, string|null>>
      */
     private function formatDayDetails(\Lisoing\Calendar\Support\Cambodia\KhmerNewYearInfo $info, string $locale): array
     {
@@ -201,9 +207,15 @@ final class Holidays extends AbstractHolidayProvider
         foreach ($allDates as $index => $date) {
             $dayName = $dayNames[$index] ?? 'maha_songkran';
             
-            // Get full Khmer date string
-            $lunar = $this->calculator->toLunar($date);
-            $fullKhmerString = $this->formatFullKhmerDate($lunar, $date, $locale);
+            $fullKhmerString = null;
+            try {
+                // Get full Khmer date string (may fail for rare edge cases)
+                $lunar = $this->calculator->toLunar($date);
+                $fullKhmerString = $this->formatFullKhmerDate($lunar, $date, $locale);
+            } catch (\Throwable $e) {
+                // Fallback: keep null to signal unavailable
+                $fullKhmerString = null;
+            }
             
             // Get Gregorian date formatted
             $gregorianDate = $date->format('F j, Y');
